@@ -127,7 +127,7 @@ class OllamaClient:
 
     def generate_document(self, prompt: str) -> str:
         """Generate a legal document based on the prompt."""
-        logger.info(f"Starting document generation with prompt: {prompt}")
+        logger.info(f"Starting document generation ({len(prompt)} chars)")
         system_prompt = """You are a legal document generator. Generate a professional legal document based on the user's requirements. 
         Include all necessary clauses and sections. Format the output in a clear, structured manner."""
         
@@ -135,7 +135,6 @@ class OllamaClient:
         try:
             for chunk in self._generate_stream(prompt, system_prompt):
                 full_response += chunk
-                logger.info(f"Received chunk: {chunk[:100]}...")
             
             if not full_response:
                 logger.error("No response generated from Ollama")
@@ -286,7 +285,6 @@ class OllamaClient:
             Use simple language and structure the output in an easy-to-understand format."""
             
             prompt = f"Simplify this legal text:\n\n{legal_text}"
-            logger.info(f"Generated prompt for simplification: {prompt[:100]}...")
             
             full_response = ""
             for chunk in self._generate_stream(prompt, system_prompt):

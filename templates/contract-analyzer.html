@@ -282,7 +282,6 @@ textarea:focus {
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Contract analyzer page loaded');
     
     const form = document.getElementById('contractForm');
     const contractInput = document.getElementById('contract');
@@ -360,7 +359,6 @@ document.addEventListener('DOMContentLoaded', function() {
         fileInfo.textContent = `Selected file: ${file.name}`;
         
         try {
-            console.log('Uploading PDF file');
             loadingIndicator.style.display = 'block';
             responseArea.innerHTML = '';
 
@@ -377,7 +375,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const data = await response.json();
-            console.log('Received analysis:', data);
             
             // Display the formatted response
             responseArea.innerHTML = formatAnalysisResponse(data);
@@ -399,23 +396,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle text input
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
-        console.log('Form submitted');
         
         const contract = contractInput.value.trim();
-        console.log('Contract text:', contract);
         
         if (!contract) {
-            console.log('Empty contract, showing alert');
             alert('Please enter contract text or upload a PDF file');
             return;
         }
 
         try {
-            console.log('Showing loading indicator');
             loadingIndicator.style.display = 'block';
             responseArea.innerHTML = '';
 
-            console.log('Making API call to /analyze-contract');
             const response = await fetch('/analyze-contract', {
                 method: 'POST',
                 headers: {
@@ -424,18 +416,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify({ contract_text: contract })
             });
 
-            console.log('Response status:', response.status);
             
             if (!response.ok) {
                 throw await errorFromResponse(response);
             }
 
             const data = await response.json();
-            console.log('Received data:', data);
             
             // Display the formatted response
             responseArea.innerHTML = formatAnalysisResponse(data);
-            console.log('Response displayed');
             
             // Clear the input
             contractInput.value = '';
@@ -446,7 +435,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p>${escapeHtml(error.message)}</p>
             </div>`;
         } finally {
-            console.log('Hiding loading indicator');
             loadingIndicator.style.display = 'none';
         }
     });

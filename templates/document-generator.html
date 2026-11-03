@@ -208,39 +208,27 @@ textarea:focus {
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Document generator page loaded');
     
     const form = document.getElementById('documentForm');
     const promptInput = document.getElementById('prompt');
     const responseArea = document.getElementById('response');
     const loadingIndicator = document.getElementById('loading');
 
-    console.log('Form elements:', {
-        form: form,
-        promptInput: promptInput,
-        responseArea: responseArea,
-        loadingIndicator: loadingIndicator
-    });
 
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
-        console.log('Form submitted');
         
         const prompt = promptInput.value.trim();
-        console.log('Prompt:', prompt);
         
         if (!prompt) {
-            console.log('Empty prompt, showing alert');
             alert('Please enter a prompt');
             return;
         }
 
         try {
-            console.log('Showing loading indicator');
             loadingIndicator.style.display = 'block';
             responseArea.textContent = '';
 
-            console.log('Making API call to /generate-document');
             const response = await fetch('/generate-document', {
                 method: 'POST',
                 headers: {
@@ -249,18 +237,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify({ prompt: prompt })
             });
 
-            console.log('Response status:', response.status);
             
             if (!response.ok) {
                 throw await errorFromResponse(response);
             }
 
             const data = await response.json();
-            console.log('Received data:', data);
             
             // Display the response
             responseArea.textContent = data.response;
-            console.log('Response displayed');
             
             // Clear the input
             promptInput.value = '';
@@ -268,7 +253,6 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error occurred:', error);
             responseArea.textContent = 'Error: ' + error.message;
         } finally {
-            console.log('Hiding loading indicator');
             loadingIndicator.style.display = 'none';
         }
     });

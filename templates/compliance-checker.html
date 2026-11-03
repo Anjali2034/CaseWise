@@ -247,7 +247,6 @@ textarea:focus {
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Compliance checker page loaded');
     
     const form = document.getElementById('complianceForm');
     const documentInput = document.getElementById('document');
@@ -269,7 +268,6 @@ document.addEventListener('DOMContentLoaded', function() {
         fileInfo.textContent = `Selected file: ${file.name}`;
         
         try {
-            console.log('Uploading PDF file');
             loadingIndicator.style.display = 'block';
             responseArea.innerHTML = '';
 
@@ -286,7 +284,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const data = await response.json();
-            console.log('Received compliance check:', data);
             
             // Display the response
             responseArea.innerHTML = formatComplianceResponse(data);
@@ -308,23 +305,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle text input
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
-        console.log('Form submitted');
         
         const document = documentInput.value.trim();
-        console.log('Document text:', document);
         
         if (!document) {
-            console.log('Empty document, showing alert');
             alert('Please enter legal text or upload a PDF file');
             return;
         }
 
         try {
-            console.log('Showing loading indicator');
             loadingIndicator.style.display = 'block';
             responseArea.innerHTML = '';
 
-            console.log('Making API call to /check-compliance');
             const response = await fetch('/check-compliance', {
                 method: 'POST',
                 headers: {
@@ -333,18 +325,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify({ legal_text: document })
             });
 
-            console.log('Response status:', response.status);
             
             if (!response.ok) {
                 throw await errorFromResponse(response);
             }
 
             const data = await response.json();
-            console.log('Received data:', data);
             
             // Display the response
             responseArea.innerHTML = formatComplianceResponse(data);
-            console.log('Response displayed');
             
             // Clear the input
             documentInput.value = '';
@@ -355,7 +344,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p>${escapeHtml(error.message)}</p>
             </div>`;
         } finally {
-            console.log('Hiding loading indicator');
             loadingIndicator.style.display = 'none';
         }
     });

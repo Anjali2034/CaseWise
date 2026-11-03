@@ -113,13 +113,14 @@ def extract_pdf_text(file: UploadFile) -> str:
         reader = PyPDF2.PdfReader(io.BytesIO(file.file.read()))
         text = "".join((page.extract_text() or "") for page in reader.pages)
     except Exception as e:
-        logger.warning(f"Could not read uploaded PDF {file.filename!r}: {e}")
+        logger.warning(f"Could not read uploaded PDF: {type(e).__name__}")
         raise HTTPException(status_code=400, detail="The uploaded file is not a valid PDF")
     if not text.strip():
         raise HTTPException(
             status_code=400,
             detail="Could not extract text from the PDF file. Scanned (image-only) PDFs are not supported yet."
         )
+    logger.info(f"Extracted {len(text)} chars from {len(reader.pages)} PDF page(s)")
     return text
 
 @app.get("/health")
@@ -156,7 +157,7 @@ async def document_simplifier_page(request: Request):
 @app.post("/legal-assistant")
 def legal_assistant(question: Question):
     try:
-        logger.info(f"Processing legal assistant request: {question.question}")
+        logger.info(f"Legal assistant request received ({len(question.question)} chars)")
         response = ollama_client.legal_assistant(question.question)
         return {"response": response}
     except HTTPException:
@@ -168,7 +169,7 @@ def legal_assistant(question: Question):
 @app.post("/generate-document")
 def generate_document(request: DocumentRequest):
     try:
-        logger.info(f"Received document generation request with prompt: {request.prompt}")
+        logger.info(f"Document generation request received ({len(request.prompt)} chars)")
         response = ollama_client.generate_document(request.prompt)
         logger.info(f"Successfully generated document of length: {len(response)}")
         return {"response": response}
@@ -234,7 +235,7 @@ def simplify_document(request: SimplificationRequest):
 @app.post("/simplify-document-pdf")
 def simplify_document_pdf(file: UploadFile = File(...)):
     try:
-        logger.info(f"Received PDF file for simplification: {file.filename}")
+        logger.info("PDF received for simplification")
         
         text = extract_pdf_text(file)
         
@@ -252,7 +253,7 @@ def simplify_document_pdf(file: UploadFile = File(...)):
 @app.post("/analyze-contract-pdf")
 def analyze_contract_pdf(file: UploadFile = File(...)):
     try:
-        logger.info(f"Received PDF file: {file.filename}")
+        logger.info("PDF received for contract analysis")
         
         text = extract_pdf_text(file)
         
@@ -270,7 +271,7 @@ def analyze_contract_pdf(file: UploadFile = File(...)):
 @app.post("/check-compliance-pdf")
 def check_compliance_pdf(file: UploadFile = File(...)):
     try:
-        logger.info(f"Received PDF file for compliance check: {file.filename}")
+        logger.info("PDF received for compliance check")
         
         text = extract_pdf_text(file)
         
