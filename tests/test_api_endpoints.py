@@ -3,7 +3,7 @@ import re
 
 import pytest
 
-import ollama_client as oc
+import llm_client as oc
 from conftest import make_blank_pdf, make_text_pdf
 
 TEXT_ENDPOINTS = [

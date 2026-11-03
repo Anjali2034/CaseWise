@@ -30,7 +30,7 @@ def test_health_reports_ollama_down(client):
 def test_health_model_detection(client, installed, expected_status, expected_available):
     fake = mock.Mock(status_code=200)
     fake.json.return_value = {"models": installed}
-    with mock.patch("ollama_client.requests.get", return_value=fake):
+    with mock.patch("llm_client.requests.get", return_value=fake):
         body = client.get("/health").json()
     assert body["ollama_reachable"] is True
     assert body["status"] == expected_status
@@ -38,9 +38,9 @@ def test_health_model_detection(client, installed, expected_status, expected_ava
 
 
 def test_model_is_configurable():
-    from ollama_client import OllamaClient
+    from llm_client import OllamaClient
     assert OllamaClient(model="llama3").model == "llama3"
-    assert main.ollama_client.model == "llama2"  # from OLLAMA_MODEL in conftest
+    assert main.llm.model == "llama2"  # from OLLAMA_MODEL in conftest
 
 
 def test_llm_endpoints_are_sync_so_they_run_in_a_threadpool():

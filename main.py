@@ -5,7 +5,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
-from ollama_client import (
+from llm_client import (
     OllamaClient,
     LLMError,
     LLMResponseFormatError,
@@ -52,12 +52,12 @@ app.add_middleware(
 
 # Initialize Ollama client. The app starts even if Ollama is down;
 # requests will return 503 until it is reachable. See /health.
-ollama_client = OllamaClient(base_url=OLLAMA_API_BASE, model=OLLAMA_MODEL)
-_startup_health = ollama_client.check_health()
+llm = OllamaClient(base_url=OLLAMA_API_BASE, model=OLLAMA_MODEL)
+_startup_health = llm.check_health()
 if not _startup_health["ollama_reachable"]:
     logger.warning(f"Ollama is not reachable at {OLLAMA_API_BASE}. AI features will fail until it is running.")
 elif not _startup_health["model_available"]:
-    logger.warning(f"Model '{ollama_client.model}' is not installed. Run: ollama pull {ollama_client.model}")
+    logger.warning(f"Model '{llm.model}' is not installed. Run: ollama pull {llm.model}")
 else:
     logger.info(f"Ollama client initialized successfully (model: {OLLAMA_MODEL})")
 
@@ -77,8 +77,8 @@ class ComplianceRequest(BaseModel):
 class SimplificationRequest(BaseModel):
     legal_text: str
 
-def handle_ollama_error(e: Exception) -> HTTPException:
-    """Convert Ollama errors to appropriate HTTP exceptions."""
+def handle_llm_error(e: Exception) -> HTTPException:
+    """Convert LLM errors to appropriate HTTP exceptions."""
     error_msg = str(e)
     logger.error(f"Handling Ollama error: {error_msg}")
 
@@ -95,7 +95,7 @@ def handle_ollama_error(e: Exception) -> HTTPException:
     elif isinstance(e, ModelNotFoundError):
         return HTTPException(
             status_code=503,
-            detail=f"Required LLM model is not available. Please run 'ollama pull {ollama_client.model}' and try again."
+            detail=f"Required LLM model is not available. Please run 'ollama pull {llm.model}' and try again."
         )
     elif isinstance(e, LLMTimeoutError):
         return HTTPException(
@@ -137,13 +137,13 @@ def extract_pdf_text(file: UploadFile) -> str:
 @app.get("/health")
 def health():
     """Liveness + dependency check. Always 200 while the web app is up."""
-    llm = ollama_client.check_health()
-    status = "ok" if llm["ollama_reachable"] and llm["model_available"] else "degraded"
-    return {"status": status, **llm}
+    llm_status = llm.check_health()
+    ok = llm_status["ollama_reachable"] and llm_status["model_available"]
+    return {"status": "ok" if ok else "degraded", **llm_status}
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse("home.html", {"request": request})
 
 @app.get("/legal-assistant", response_class=HTMLResponse)
 async def legal_assistant_page(request: Request):
@@ -169,19 +169,19 @@ async def document_simplifier_page(request: Request):
 def legal_assistant(question: Question):
     try:
         logger.info(f"Legal assistant request received ({len(question.question)} chars)")
-        response = ollama_client.legal_assistant(question.question)
+        response = llm.legal_assistant(question.question)
         return {"response": response}
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error in legal_assistant endpoint: {str(e)}")
-        raise handle_ollama_error(e)
+        raise handle_llm_error(e)
 
 @app.post("/generate-document")
 def generate_document(request: DocumentRequest):
     try:
         logger.info(f"Document generation request received ({len(request.prompt)} chars)")
-        response = ollama_client.generate_document(request.prompt)
+        response = llm.generate_document(request.prompt)
         logger.info(f"Successfully generated document of length: {len(response)}")
         return {"response": response}
     except HTTPException:
@@ -189,31 +189,31 @@ def generate_document(request: DocumentRequest):
     except Exception as e:
         logger.error(f"Error in generate_document endpoint: {str(e)}")
         logger.error(f"Stack trace: {traceback.format_exc()}")
-        raise handle_ollama_error(e)
+        raise handle_llm_error(e)
 
 @app.post("/analyze-contract")
 def analyze_contract(request: ContractRequest):
     try:
         logger.info("Processing contract analysis request")
-        response = ollama_client.analyze_contract(request.contract_text)
+        response = llm.analyze_contract(request.contract_text)
         return response
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error in analyze_contract endpoint: {str(e)}")
-        raise handle_ollama_error(e)
+        raise handle_llm_error(e)
 
 @app.post("/check-compliance")
 def check_compliance(request: ComplianceRequest):
     try:
         logger.info("Processing compliance check request")
-        response = ollama_client.check_compliance(request.legal_text)
+        response = llm.check_compliance(request.legal_text)
         return response
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error in check_compliance endpoint: {str(e)}")
-        raise handle_ollama_error(e)
+        raise handle_llm_error(e)
 
 @app.post("/simplify-document")
 def simplify_document(request: SimplificationRequest):
@@ -225,7 +225,7 @@ def simplify_document(request: SimplificationRequest):
                 detail="Legal text cannot be empty"
             )
             
-        response = ollama_client.simplify_document(request.legal_text)
+        response = llm.simplify_document(request.legal_text)
         if not response:
             raise HTTPException(
                 status_code=500,
@@ -241,7 +241,7 @@ def simplify_document(request: SimplificationRequest):
     except Exception as e:
         logger.error(f"Error in simplify_document endpoint: {str(e)}")
         logger.error(f"Stack trace: {traceback.format_exc()}")
-        raise handle_ollama_error(e)
+        raise handle_llm_error(e)
 
 @app.post("/simplify-document-pdf")
 def simplify_document_pdf(file: UploadFile = File(...)):
@@ -252,14 +252,14 @@ def simplify_document_pdf(file: UploadFile = File(...)):
         
         # Simplify the extracted text
         logger.info("Simplifying extracted text from PDF")
-        response = ollama_client.simplify_document(text)
+        response = llm.simplify_document(text)
         return {"response": response}
         
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error processing PDF: {str(e)}")
-        raise handle_ollama_error(e)
+        raise handle_llm_error(e)
 
 @app.post("/analyze-contract-pdf")
 def analyze_contract_pdf(file: UploadFile = File(...)):
@@ -270,14 +270,14 @@ def analyze_contract_pdf(file: UploadFile = File(...)):
         
         # Analyze the extracted text
         logger.info("Analyzing extracted text from PDF")
-        response = ollama_client.analyze_contract(text)
+        response = llm.analyze_contract(text)
         return response
         
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error processing PDF: {str(e)}")
-        raise handle_ollama_error(e)
+        raise handle_llm_error(e)
 
 @app.post("/check-compliance-pdf")
 def check_compliance_pdf(file: UploadFile = File(...)):
@@ -288,14 +288,14 @@ def check_compliance_pdf(file: UploadFile = File(...)):
         
         # Check compliance of the extracted text
         logger.info("Checking compliance of extracted text from PDF")
-        response = ollama_client.check_compliance(text)
+        response = llm.check_compliance(text)
         return response
         
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error processing PDF: {str(e)}")
-        raise handle_ollama_error(e)
+        raise handle_llm_error(e)
 
 if __name__ == "__main__":
     import uvicorn

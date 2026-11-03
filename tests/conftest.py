@@ -35,7 +35,7 @@ def llm_reply():
 
     def _set(*chunks, error=None):
         kwargs = {"side_effect": error} if error else {"side_effect": lambda *a, **k: iter(chunks)}
-        p = mock.patch.object(main.ollama_client, "_generate_stream", **kwargs)
+        p = mock.patch.object(main.llm, "_generate_stream", **kwargs)
         p.start()
         patches.append(p)
 

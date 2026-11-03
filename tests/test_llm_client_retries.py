@@ -7,7 +7,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
 
-import ollama_client as oc
+import llm_client as oc
 
 
 def chunk(text, done=False):
