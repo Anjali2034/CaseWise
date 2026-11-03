@@ -1,9 +1,11 @@
 """Every API endpoint: success responses and correct HTTP error codes."""
 import re
+from unittest import mock
 
 import pytest
 
 import llm_client as oc
+import main
 from conftest import make_blank_pdf, make_text_pdf
 
 TEXT_ENDPOINTS = [
@@ -69,12 +71,68 @@ def test_pdf_endpoints_extract_text_and_call_model(client, llm_reply, endpoint):
     assert post(client, endpoint, None).status_code == 200
 
 
-# ---------- bad input: 400 (fix #4) ----------
+# ---------- bad input: 400 / 413 (fixes #4, #10) ----------
 
-def test_empty_text_is_400(client):
-    r = client.post("/simplify-document", json={"legal_text": "   "})
+@pytest.mark.parametrize("endpoint, key", TEXT_ENDPOINTS)
+@pytest.mark.parametrize("text", ["", "   ", "\n\t "])
+def test_empty_text_is_400_on_every_text_endpoint(client, llm_reply, endpoint, key, text):
+    llm_reply("should not be called")
+    r = client.post(endpoint, json={key: text})
     assert r.status_code == 400
-    assert r.json()["detail"] == "Legal text cannot be empty"
+    assert r.json()["detail"] == "The text cannot be empty."
+
+
+@pytest.mark.parametrize("endpoint, key", TEXT_ENDPOINTS)
+def test_text_over_the_limit_is_413(client, endpoint, key):
+    r = client.post(endpoint, json={key: "a" * (main.MAX_TEXT_CHARS + 1)})
+    assert r.status_code == 413
+    assert "too long" in r.json()["detail"]
+
+
+@pytest.mark.parametrize("endpoint, key", TEXT_ENDPOINTS)
+def test_text_exactly_at_the_limit_is_accepted(client, llm_reply, endpoint, key):
+    llm_reply(ANALYSIS_JSON if "analyze" in endpoint else COMPLIANCE_JSON if "compliance" in endpoint else "ok")
+    assert client.post(endpoint, json={key: "a" * main.MAX_TEXT_CHARS}).status_code == 200
+
+
+def test_surrounding_whitespace_is_stripped_before_reaching_the_model(client, llm_reply):
+    seen = {}
+    with mock.patch.object(main.llm, "_generate_stream",
+                           side_effect=lambda prompt, system=None: (seen.setdefault("p", prompt), iter(["ok"]))[1]):
+        client.post("/legal-assistant", json={"question": "  What is a lease?  \n"})
+    assert seen["p"] == "What is a lease?"
+
+
+@pytest.mark.parametrize("body", [{}, {"wrong_field": "x"}, {"question": 123}])
+def test_malformed_body_gives_readable_400(client, body):
+    r = client.post("/legal-assistant", json=body)
+    assert r.status_code == 400
+    assert isinstance(r.json()["detail"], str)  # a message the page can display, not a list
+
+
+@pytest.mark.parametrize("endpoint", PDF_ENDPOINTS)
+def test_pdf_over_size_limit_is_413(client, endpoint, monkeypatch):
+    monkeypatch.setattr(main, "MAX_PDF_BYTES", 1000)
+    big = make_text_pdf("x" * 2000)
+    r = client.post(endpoint, files={"file": ("big.pdf", big, "application/pdf")})
+    assert r.status_code == 413
+    assert "too large" in r.json()["detail"]
+
+
+@pytest.mark.parametrize("endpoint", PDF_ENDPOINTS)
+def test_pdf_whose_text_exceeds_text_limit_is_413(client, endpoint, monkeypatch):
+    monkeypatch.setattr(main, "MAX_TEXT_CHARS", 10)
+    r = client.post(endpoint, files={"file": ("a.pdf", make_text_pdf("This Agreement is long"), "application/pdf")})
+    assert r.status_code == 413
+    assert "too long" in r.json()["detail"]
+
+
+def test_non_pdf_renamed_to_pdf_is_rejected_before_parsing(client):
+    with mock.patch("main.PyPDF2.PdfReader") as reader:
+        r = client.post("/analyze-contract-pdf",
+                        files={"file": ("contract.pdf", b"MZ\x90\x00 an .exe renamed", "application/pdf")})
+    assert r.status_code == 400
+    reader.assert_not_called()
 
 
 @pytest.mark.parametrize("endpoint", PDF_ENDPOINTS)

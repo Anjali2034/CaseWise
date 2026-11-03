@@ -3,8 +3,10 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Dict, Any, Optional
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, StringConstraints
+from typing import Annotated
 from llm_client import (
     OllamaClient,
     LLMError,
@@ -61,21 +63,49 @@ elif not _startup_health["model_available"]:
 else:
     logger.info(f"Ollama client initialized successfully (model: {OLLAMA_MODEL})")
 
-# Request models
+# Input limits (configurable, see .env.example)
+MAX_TEXT_CHARS = int(os.getenv("MAX_TEXT_CHARS", "50000"))
+MAX_PDF_BYTES = int(float(os.getenv("MAX_PDF_MB", "10")) * 1024 * 1024)
+
+# Request models. Every text field is stripped, must be non-empty and has a max length.
+InputText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=MAX_TEXT_CHARS)]
+
 class Question(BaseModel):
-    question: str
+    question: InputText
 
 class DocumentRequest(BaseModel):
-    prompt: str
+    prompt: InputText
 
 class ContractRequest(BaseModel):
-    contract_text: str
+    contract_text: InputText
 
 class ComplianceRequest(BaseModel):
-    legal_text: str
+    legal_text: InputText
 
 class SimplificationRequest(BaseModel):
-    legal_text: str
+    legal_text: InputText
+
+
+def text_too_long_error() -> HTTPException:
+    return HTTPException(
+        status_code=413,
+        detail=f"The text is too long. The maximum is {MAX_TEXT_CHARS:,} characters."
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(request: Request, exc: RequestValidationError):
+    """Turn FastAPI's 422 error list into one readable message the pages can show."""
+    error = exc.errors()[0]
+    if error["type"] == "string_too_short":
+        status, detail = 400, "The text cannot be empty."
+    elif error["type"] == "string_too_long":
+        too_long = text_too_long_error()
+        status, detail = too_long.status_code, too_long.detail
+    else:
+        field = ".".join(str(part) for part in error["loc"] if part != "body")
+        status, detail = 400, f"Invalid request: '{field}' {error['msg'].lower()}."
+    return JSONResponse(status_code=status, content={"detail": detail})
 
 def handle_llm_error(e: Exception) -> HTTPException:
     """Convert LLM errors to appropriate HTTP exceptions."""
@@ -119,9 +149,21 @@ def handle_llm_error(e: Exception) -> HTTPException:
         )
 
 def extract_pdf_text(file: UploadFile) -> str:
-    """Read an uploaded PDF and return its text. Raises HTTP 400 for bad input."""
+    """Read an uploaded PDF and return its text. Raises HTTP 400/413 for bad input."""
+    # Read at most one byte past the limit, so oversized files are rejected
+    # without loading all of them into memory.
+    data = file.file.read(MAX_PDF_BYTES + 1)
+    if len(data) > MAX_PDF_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"The PDF is too large. The maximum size is {MAX_PDF_BYTES // (1024 * 1024)} MB."
+        )
+    # Every PDF starts with "%PDF-". Checking this is cheap and doesn't trust
+    # the browser-supplied file name or content type.
+    if not data.lstrip()[:5] == b"%PDF-":
+        raise HTTPException(status_code=400, detail="The uploaded file is not a valid PDF")
     try:
-        reader = PyPDF2.PdfReader(io.BytesIO(file.file.read()))
+        reader = PyPDF2.PdfReader(io.BytesIO(data))
         text = "".join((page.extract_text() or "") for page in reader.pages)
     except Exception as e:
         logger.warning(f"Could not read uploaded PDF: {type(e).__name__}")
@@ -131,6 +173,8 @@ def extract_pdf_text(file: UploadFile) -> str:
             status_code=400,
             detail="Could not extract text from the PDF file. Scanned (image-only) PDFs are not supported yet."
         )
+    if len(text) > MAX_TEXT_CHARS:
+        raise text_too_long_error()
     logger.info(f"Extracted {len(text)} chars from {len(reader.pages)} PDF page(s)")
     return text
 
@@ -219,12 +263,6 @@ def check_compliance(request: ComplianceRequest):
 def simplify_document(request: SimplificationRequest):
     try:
         logger.info("Processing document simplification request")
-        if not request.legal_text or not request.legal_text.strip():
-            raise HTTPException(
-                status_code=400,
-                detail="Legal text cannot be empty"
-            )
-            
         response = llm.simplify_document(request.legal_text)
         if not response:
             raise HTTPException(
@@ -235,9 +273,6 @@ def simplify_document(request: SimplificationRequest):
         return {"response": response}
     except HTTPException:
         raise
-    except ValueError as e:
-        logger.error(f"Validation error in simplify_document endpoint: {str(e)}")
-        raise HTTPException(status_code=400, detail="Legal text cannot be empty")
     except Exception as e:
         logger.error(f"Error in simplify_document endpoint: {str(e)}")
         logger.error(f"Stack trace: {traceback.format_exc()}")

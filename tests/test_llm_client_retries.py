@@ -65,9 +65,14 @@ class FakeOllama(BaseHTTPRequestHandler):
             pass  # client gave up (timeout test)
 
 
+class QuietServer(ThreadingHTTPServer):
+    def handle_error(self, request, client_address):
+        pass  # connections are cut on purpose in some scenarios; don't print tracebacks
+
+
 @pytest.fixture(scope="module")
 def fake_server():
-    server = ThreadingHTTPServer(("127.0.0.1", 0), FakeOllama)
+    server = QuietServer(("127.0.0.1", 0), FakeOllama)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     yield f"http://127.0.0.1:{server.server_address[1]}"
     server.shutdown()
