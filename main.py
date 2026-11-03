@@ -12,6 +12,7 @@ from ollama_client import (
     ModelNotFoundError,
     OllamaUnavailableError,
 )
+from dotenv import load_dotenv
 import traceback
 import logging
 import os
@@ -22,9 +23,13 @@ import io
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Load settings from a local .env file if present (see .env.example)
+load_dotenv()
+
 # Get environment variables
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 OLLAMA_API_BASE = os.getenv("OLLAMA_API_BASE", "http://localhost:11434")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama2")
 
 app = FastAPI(title="LegalEdge AI")
 
@@ -45,14 +50,14 @@ app.add_middleware(
 
 # Initialize Ollama client. The app starts even if Ollama is down;
 # requests will return 503 until it is reachable. See /health.
-ollama_client = OllamaClient(base_url=OLLAMA_API_BASE)
+ollama_client = OllamaClient(base_url=OLLAMA_API_BASE, model=OLLAMA_MODEL)
 _startup_health = ollama_client.check_health()
 if not _startup_health["ollama_reachable"]:
     logger.warning(f"Ollama is not reachable at {OLLAMA_API_BASE}. AI features will fail until it is running.")
 elif not _startup_health["model_available"]:
     logger.warning(f"Model '{ollama_client.model}' is not installed. Run: ollama pull {ollama_client.model}")
 else:
-    logger.info("Ollama client initialized successfully")
+    logger.info(f"Ollama client initialized successfully (model: {OLLAMA_MODEL})")
 
 # Request models
 class Question(BaseModel):

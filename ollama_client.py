@@ -32,9 +32,9 @@ class LLMResponseFormatError(LLMError):
 
 
 class OllamaClient:
-    def __init__(self, base_url="http://localhost:11434"):
+    def __init__(self, base_url="http://localhost:11434", model="llama2"):
         self.base_url = base_url
-        self.model = "llama2"
+        self.model = model
         self.connect_timeout = 5   # seconds to establish the connection
         self.read_timeout = 120    # max seconds to wait between streamed chunks
         self.max_attempts = 2      # 1 retry, transient errors only

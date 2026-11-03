@@ -20,7 +20,7 @@ Tracks every fix and feature. Each item is done in its own commit.
 - [x] Initialise git repo, add CHECKLIST.md, baseline commit of existing code
 - [x] Push to GitHub: https://github.com/Anjali2034/Casewise-AI
 - [ ] Add `.gitattributes` so line endings are consistent (removes the LF/CRLF warnings)
-- [ ] Add README.md and `.env.example`
+- [~] Add README.md and `.env.example` (`.env.example` done; README to do)
 
 ### Security and correctness
 - [x] Fix XSS: escape LLM output and error messages before inserting into the page (contract analyzer, compliance checker, simplifier)
@@ -30,7 +30,7 @@ Tracks every fix and feature. Each item is done in its own commit.
 - [x] Return proper HTTP errors from contract analysis and compliance check (no 200 responses with an `error` field)
 - [ ] Remove the now-unused `if (data.error)` branches in the contract-analyzer and compliance-checker templates
 - [x] Fix retry logic: no duplicated text after a partial stream, no retrying 4xx errors, fail fast when Ollama is down (was ~10s before the 503)
-- [ ] Make the model name configurable (env var) and make the error messages match it
+- [x] Make the model name configurable (env var) and make the error messages match it
 - [ ] Stop logging full documents, prompts and streamed chunks; remove `console.log` of user text
 - [ ] Don't leak internal error details to users
 - [ ] Add input limits: max text length, max PDF size, server-side PDF type check
@@ -105,4 +105,5 @@ Tracks every fix and feature. Each item is done in its own commit.
 | 4 | App starts without Ollama; `GET /health` endpoint; connection failures return 503 instead of a raw 500 | `6582157` |
 | 5 | 400s no longer become 500s; shared `extract_pdf_text()` (invalid PDF returns 400); PDF endpoints return 503 when Ollama is down; pages show the server's error message | `9d54add` |
 | 6 | Analysis and compliance stop returning 200 on failure: Ollama down returns 503, unparseable model output returns 502 (`LLMResponseFormatError`) | `e42eca5` |
-| 7 | Retry policy: 1 retry, transient errors only, never after text has been yielded; real streaming (`stream=True`); typed errors (404 returns 503 with the correct model name, timeout returns 504, stream errors no longer become an empty 200) | _(your commit)_ |
+| 7 | Retry policy: 1 retry, transient errors only, never after text has been yielded; real streaming (`stream=True`); typed errors (404 returns 503 with the correct model name, timeout returns 504, stream errors no longer become an empty 200) | `721ba1a` |
+| 8 | `OLLAMA_MODEL` env var (default `llama2`); `.env` loading via python-dotenv; `.env.example`; render.yaml updated | _(your commit)_ |

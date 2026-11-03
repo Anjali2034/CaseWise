@@ -8,4 +8,6 @@ services:
       - key: PYTHON_VERSION
         value: 3.8.0
       - key: OLLAMA_API_BASE
-        value: https://your-ollama-instance.com  # You'll need to update this 
+        value: https://your-ollama-instance.com  # You'll need to update this
+      - key: OLLAMA_MODEL
+        value: llama2
