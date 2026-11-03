@@ -6,6 +6,32 @@ import pytest
 
 STYLES = Path("static/css/styles.css").read_text(encoding="utf-8")
 
+# ---------- no dead links (fix #16) ----------
+
+PAGES = ["/", "/legal-assistant", "/document-generator", "/contract-analyzer",
+         "/compliance-checker", "/document-simplifier"]
+
+
+def internal_links(html):
+    """Every same-site href/src on a page (anchors like #features excluded)."""
+    return {u.split("#")[0] for u in re.findall(r'(?:href|src)="(/[^"]*)"', html) if u.split("#")[0]}
+
+
+@pytest.mark.parametrize("page", PAGES)
+def test_every_internal_link_on_every_page_works(client, page):
+    links = internal_links(client.get(page).text)
+    assert links, "expected some links"
+    broken = {link: client.get(link).status_code for link in links}
+    broken = {link: code for link, code in broken.items() if code != 200}
+    assert not broken, f"broken links on {page}: {broken}"
+
+
+@pytest.mark.parametrize("page", PAGES)
+def test_no_links_to_account_pages_that_do_not_exist(client, page):
+    html = client.get(page).text
+    assert "/login" not in html and "/register" not in html
+
+
 # ---------- global CSS must not override page components (fix #15) ----------
 
 def test_no_global_rules_that_restyle_every_textarea_or_submit_button():

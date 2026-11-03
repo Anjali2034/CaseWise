@@ -30,10 +30,6 @@
                     <a href="/document-simplifier" class="nav-link">Document Simplifier</a>
                 </div>
             </div>
-            <div class="navbar-right">
-                <a href="/login" class="nav-button secondary">Sign In</a>
-                <a href="/register" class="nav-button primary">Get Started</a>
-            </div>
             <button class="mobile-menu-button">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M4 6H20M4 12H20M4 18H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -48,10 +44,6 @@
         <a href="/contract-analyzer" class="mobile-nav-link">Contract Analyzer</a>
         <a href="/compliance-checker" class="mobile-nav-link">Compliance Checker</a>
         <a href="/document-simplifier" class="mobile-nav-link">Document Simplifier</a>
-        <div class="mobile-nav-buttons">
-            <a href="/login" class="mobile-nav-button secondary">Sign In</a>
-            <a href="/register" class="mobile-nav-button primary">Get Started</a>
-        </div>
     </div>
 
     <main>
@@ -164,40 +156,6 @@
     opacity: 1;
 }
 
-.navbar-right {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.nav-button {
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    text-decoration: none;
-    font-size: 0.95rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
-}
-
-.nav-button.primary {
-    background-color: var(--primary-color);
-    color: white;
-}
-
-.nav-button.primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.nav-button.secondary {
-    color: var(--text-color);
-    opacity: 0.8;
-}
-
-.nav-button.secondary:hover {
-    opacity: 1;
-}
-
 .mobile-menu-button {
     display: none;
     background: none;
@@ -233,39 +191,8 @@
     opacity: 1;
 }
 
-.mobile-nav-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.mobile-nav-button {
-    padding: 0.75rem;
-    border-radius: 6px;
-    text-decoration: none;
-    text-align: center;
-    font-weight: 500;
-}
-
-.mobile-nav-button.primary {
-    background-color: var(--primary-color);
-    color: white;
-}
-
-.mobile-nav-button.secondary {
-    color: var(--text-color);
-    opacity: 0.8;
-}
-
 @media (max-width: 768px) {
     .navbar-links {
-        display: none;
-    }
-
-    .navbar-right {
         display: none;
     }
 
