@@ -17,7 +17,7 @@ def test_pages_render_even_when_ollama_is_down(client, path):
 
 def test_health_reports_ollama_down(client):
     body = client.get("/health").json()
-    assert body == {"status": "degraded", "ollama_reachable": False,
+    assert body == {"status": "degraded", "provider": "ollama", "reachable": False,
                     "model": "llama2", "model_available": False}
 
 
@@ -32,7 +32,7 @@ def test_health_model_detection(client, installed, expected_status, expected_ava
     fake.json.return_value = {"models": installed}
     with mock.patch("llm_client.requests.get", return_value=fake):
         body = client.get("/health").json()
-    assert body["ollama_reachable"] is True
+    assert body["reachable"] is True
     assert body["status"] == expected_status
     assert body["model_available"] is expected_available
 

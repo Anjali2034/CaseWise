@@ -19,6 +19,11 @@ os.chdir(ROOT)  # the app mounts "static" and "templates" relative to the cwd
 os.environ["OLLAMA_API_BASE"] = "http://127.0.0.1:9"
 os.environ["OLLAMA_MODEL"] = "llama2"
 # Pin the rest too, so a developer's local .env can't change test results.
+os.environ["LLM_PROVIDER"] = "ollama"
+os.environ["GROQ_API_KEY"] = ""
+os.environ["AI_REQUESTS_PER_MINUTE"] = "0"   # rate limits off here; tests/test_rate_limit.py covers them
+os.environ["AI_REQUESTS_PER_DAY"] = "0"
+os.environ["TRUST_PROXY_HEADERS"] = "false"
 os.environ["ALLOWED_ORIGINS"] = ""
 os.environ["MAX_TEXT_CHARS"] = "50000"
 os.environ["MAX_PDF_MB"] = "10"
@@ -30,6 +35,14 @@ from fastapi.testclient import TestClient  # noqa: E402
 @pytest.fixture
 def client():
     return TestClient(main.app)
+
+
+@pytest.fixture(autouse=True)
+def fresh_health_cache():
+    """/health results are cached for a minute; tests need each check to really run."""
+    main.llm._health_cache = None
+    yield
+    main.llm._health_cache = None
 
 
 @pytest.fixture

@@ -151,9 +151,22 @@ def test_fake_pdf_is_400(client, endpoint):
 
 # ---------- LLM failures map to the right status (fixes #3, #5, #6, #9) ----------
 
+def raised_by_ollama_for_status(status):
+    """The exact error the Ollama client raises for an HTTP status (with its user message)."""
+    response = mock.Mock(status_code=status, text="", headers={})
+    response.raise_for_status.side_effect = AssertionError("should have raised a typed error first")
+    try:
+        main.llm._raise_for_status(response)
+    except oc.LLMError as e:
+        return e
+
+
 LLM_ERRORS = [
-    (oc.OllamaUnavailableError("x"), 503, "Ollama server is not running"),
-    (oc.ModelNotFoundError("x"), 503, "ollama pull llama2"),
+    (main.llm._unavailable_error(), 503, "Ollama server is not running"),
+    (raised_by_ollama_for_status(404), 503, "ollama pull llama2"),
+    (oc.ServiceUnavailableError("x"), 503, "temporarily unavailable"),
+    (oc.LLMRateLimitedError("x", retry_after=30), 429, "very busy right now"),
+    (oc.DocumentTooLongError("x"), 413, "too long for the AI"),
     (oc.LLMTimeoutError("x"), 504, "took too long"),
     (oc.LLMError("x"), 502, "AI service returned an error"),
 ]

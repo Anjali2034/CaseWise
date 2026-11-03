@@ -1,6 +1,6 @@
 # CaseWise
 
-CaseWise is an AI legal document assistant. It helps you understand, draft and review legal documents in plain language, using a language model that can run entirely on your own computer.
+CaseWise is an AI legal document assistant. It helps you understand, draft and review legal documents in plain language. Run it with a language model on your own computer (Ollama), or with Groq's hosted API, which the live site uses.
 
 > **Not legal advice.** CaseWise gives general legal information. AI can make mistakes, so have a qualified lawyer review anything important.
 
@@ -16,26 +16,33 @@ CaseWise is an AI legal document assistant. It helps you understand, draft and r
 
 ## Privacy
 
-- **Your own AI model:** CaseWise talks to [Ollama](https://ollama.com), which can run on your own computer, so documents don't have to go to a third-party AI service.
+- **Your choice of AI:** locally, CaseWise talks to [Ollama](https://ollama.com) on your own computer, so documents never leave it. The live site uses [Groq](https://groq.com), whose [terms](https://console.groq.com/docs/legal/services-agreement) say it doesn't train on API inputs or outputs and [doesn't keep them by default](https://console.groq.com/docs/your-data).
 - **Nothing is stored:** there is no database. Uploaded documents are processed in memory.
 - **Nothing sensitive in the logs:** server logs record sizes ("212 chars"), never the text of questions, documents or file names.
 
 ## Requirements
 
 - **Python 3.13** (the version used for development, tests and deployment)
-- **Ollama** with a model installed, for the AI features. The website still loads without it; the AI tools reply that Ollama isn't running.
+- For the AI features, **either** [Ollama](https://ollama.com) with a model installed (local, private) **or** a free [Groq API key](https://console.groq.com/keys). The website still loads without either; the AI tools reply that the AI service is unavailable.
 
 ## Getting started
 
-### 1. Install Ollama and a model
+### 1. Choose an AI provider
 
-Download Ollama from [ollama.com](https://ollama.com), then pull a model:
+**Option A: Ollama (local, private, the default).** Download Ollama from [ollama.com](https://ollama.com), then pull a model:
 
 ```bash
 ollama pull llama2
 ```
 
 `llama2` is the default. Newer models such as `llama3.1` handle much longer documents (a larger context window), so they're recommended for contracts: run `ollama pull llama3.1` and set `OLLAMA_MODEL=llama3.1` (see [Configuration](#configuration)).
+
+**Option B: Groq (hosted, what the live site uses).** Create a free API key at [console.groq.com/keys](https://console.groq.com/keys), then put these in a `.env` file (see [Configuration](#configuration)):
+
+```bash
+LLM_PROVIDER=groq
+GROQ_API_KEY=your-key-here
+```
 
 ### 2. Install CaseWise
 
@@ -62,13 +69,13 @@ pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-Open <http://localhost:8000>. To check that CaseWise can reach Ollama, open <http://localhost:8000/health>:
+Open <http://localhost:8000>. To check that CaseWise can reach the AI provider, open <http://localhost:8000/health>:
 
 ```json
-{"status": "ok", "ollama_reachable": true, "model": "llama2", "model_available": true}
+{"status": "ok", "provider": "ollama", "model": "llama2", "reachable": true, "model_available": true}
 ```
 
-`"status": "degraded"` means Ollama isn't running or the model isn't installed. The other fields tell you which.
+`"status": "degraded"` means the AI service isn't reachable (Ollama isn't running, or the Groq key is missing or wrong) or the model isn't available. The other fields tell you which.
 
 ## Configuration
 
@@ -76,8 +83,14 @@ Settings are read from environment variables, or from a `.env` file in the proje
 
 | Setting | Default | What it does |
 |---|---|---|
+| `LLM_PROVIDER` | `ollama` | `ollama` (local) or `groq` (hosted) |
 | `OLLAMA_API_BASE` | `http://localhost:11434` | Where the Ollama server is running |
-| `OLLAMA_MODEL` | `llama2` | Which model to use. It must be installed (`ollama pull <name>`) |
+| `OLLAMA_MODEL` | `llama2` | Which Ollama model to use. It must be installed (`ollama pull <name>`) |
+| `GROQ_API_KEY` | *(empty)* | Your Groq API key. Keep it secret: put it in `.env` or your host's secret settings, never in the code |
+| `GROQ_MODEL` | `llama-3.3-70b-versatile` | Which [Groq model](https://console.groq.com/docs/models) to use |
+| `AI_REQUESTS_PER_MINUTE` | `5` | Per-visitor limit on the AI tools, per minute (`0` = off) |
+| `AI_REQUESTS_PER_DAY` | `50` | Per-visitor limit on the AI tools, per day (`0` = off) |
+| `TRUST_PROXY_HEADERS` | `false` | Set to `true` behind a trusted proxy (like Render), so rate limits use the visitor's IP instead of the proxy's |
 | `MAX_TEXT_CHARS` | `50000` | Maximum characters per request (pasted text, or text extracted from a PDF) |
 | `MAX_PDF_MB` | `10` | Maximum PDF upload size in megabytes |
 | `ALLOWED_ORIGINS` | *(empty)* | Other websites allowed to call the API from a browser (CORS), comma-separated. Leave empty unless you host a separate frontend |
@@ -111,9 +124,10 @@ Errors return `{"detail": "a readable message"}` with a meaningful status code:
 | Status | Meaning |
 |---|---|
 | `400` | Empty text, an invalid request, or a file that isn't a readable PDF |
-| `413` | Text longer than `MAX_TEXT_CHARS`, or a PDF larger than `MAX_PDF_MB` |
+| `413` | Text longer than `MAX_TEXT_CHARS`, a PDF larger than `MAX_PDF_MB`, or a document too long for the AI model |
+| `429` | Too many requests: the visitor's rate limit, or the AI provider is busy. A `Retry-After` header says how many seconds to wait |
 | `502` | The AI returned an empty or badly formatted answer |
-| `503` | Ollama isn't running, or the model isn't installed |
+| `503` | The AI service isn't reachable or isn't configured, or the model isn't available |
 | `504` | The AI took too long to answer |
 | `500` | Unexpected error. The message includes an error ID that also appears in the server log |
 
@@ -121,7 +135,8 @@ Errors return `{"detail": "a readable message"}` with a meaningful status code:
 
 ```
 main.py                 Web app: pages, API endpoints, input limits, error handling
-llm_client.py           Talks to Ollama: streaming, retries, parsing the model's answers
+llm_client.py           Talks to the AI (Ollama or Groq): streaming, retries, parsing the model's answers
+rate_limit.py           Per-visitor limits on the AI tools
 prompts.py              The instructions sent to the AI for each tool, with shared safety rules
 templates/              HTML pages (Jinja2)
   base.html             Shared layout, navbar and JavaScript helpers
@@ -147,4 +162,11 @@ pytest
 
 ## Deployment
 
-[render.yaml](render.yaml) describes a [Render](https://render.com) web service. Render cannot run Ollama itself, so `OLLAMA_API_BASE` must point to an Ollama server you host elsewhere. Built-in support for a hosted AI provider is planned.
+The live site runs on [Render](https://render.com)'s free plan, using Groq for the AI. [render.yaml](render.yaml) describes the whole service.
+
+1. **Get a Groq API key** at [console.groq.com/keys](https://console.groq.com/keys).
+2. **Turn on Zero Data Retention** in Groq's [Data Controls settings](https://console.groq.com/settings/data-controls), so Groq doesn't keep request logs even for troubleshooting.
+3. In Render, choose **New → Blueprint** and connect this GitHub repository. Render reads `render.yaml` and asks for `GROQ_API_KEY`: paste the key there. It's stored as a secret, never in the code.
+4. When the deploy finishes, open `https://<your-service>.onrender.com/health` and check for `"status": "ok"`.
+
+On the free plan, the service sleeps after about 15 minutes without visitors, and the next visit takes 30-60 seconds to wake it up. Rate limits are kept in memory, so they reset when it restarts.

@@ -1,13 +1,23 @@
 services:
   - type: web
     name: casewise
-    env: python
+    runtime: python
+    plan: free                      # sleeps after ~15 min idle; the next visit takes ~30-60s to wake up
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION
-        value: 3.13.5  # keep in sync with the version used for local development and tests
-      - key: OLLAMA_API_BASE
-        value: https://your-ollama-instance.com  # You'll need to update this
-      - key: OLLAMA_MODEL
-        value: llama2
+        value: 3.13.5               # keep in sync with the version used for local development and tests
+      - key: LLM_PROVIDER
+        value: groq
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
+      - key: GROQ_API_KEY
+        sync: false                 # secret: set it in the Render dashboard, never in this file
+      - key: TRUST_PROXY_HEADERS
+        value: "true"               # Render is a proxy: read the visitor's IP from its headers
+      - key: AI_REQUESTS_PER_MINUTE
+        value: "5"
+      - key: AI_REQUESTS_PER_DAY
+        value: "50"

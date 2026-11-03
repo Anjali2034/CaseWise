@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request, UploadFile, File
+from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile, File
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -8,13 +8,17 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, StringConstraints
 from typing import Annotated
 from llm_client import (
-    OllamaClient,
+    DocumentTooLongError,
+    GroqClient,
     LLMError,
+    LLMRateLimitedError,
     LLMResponseFormatError,
     LLMTimeoutError,
     ModelNotFoundError,
-    OllamaUnavailableError,
+    OllamaClient,
+    ServiceUnavailableError,
 )
+from rate_limit import RateLimiter, client_key
 from dotenv import load_dotenv
 import traceback
 import logging
@@ -35,10 +39,20 @@ def parse_origins(raw: str) -> list:
     return [o.strip().rstrip("/") for o in raw.split(",") if o.strip()]
 
 
-# Get environment variables
+def env_flag(name: str, default: bool = False) -> bool:
+    return os.getenv(name, str(default)).strip().lower() in ("1", "true", "yes", "on")
+
+
+# Get environment variables (all documented in .env.example)
 ALLOWED_ORIGINS = parse_origins(os.getenv("ALLOWED_ORIGINS", ""))
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama").strip().lower()
 OLLAMA_API_BASE = os.getenv("OLLAMA_API_BASE", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama2")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+AI_REQUESTS_PER_MINUTE = int(os.getenv("AI_REQUESTS_PER_MINUTE", "5"))
+AI_REQUESTS_PER_DAY = int(os.getenv("AI_REQUESTS_PER_DAY", "50"))
+TRUST_PROXY_HEADERS = env_flag("TRUST_PROXY_HEADERS")
 
 app = FastAPI(title="CaseWise")
 
@@ -67,16 +81,45 @@ def cors_settings(origins: list) -> dict:
 if ALLOWED_ORIGINS:
     app.add_middleware(CORSMiddleware, **cors_settings(ALLOWED_ORIGINS))
 
-# Initialize Ollama client. The app starts even if Ollama is down;
-# requests will return 503 until it is reachable. See /health.
-llm = OllamaClient(base_url=OLLAMA_API_BASE, model=OLLAMA_MODEL)
+def make_llm_client():
+    """The AI provider: local Ollama (default, private) or hosted Groq (the live site)."""
+    if LLM_PROVIDER == "ollama":
+        return OllamaClient(base_url=OLLAMA_API_BASE, model=OLLAMA_MODEL)
+    if LLM_PROVIDER == "groq":
+        return GroqClient(api_key=GROQ_API_KEY, model=GROQ_MODEL)
+    raise ValueError(f"Unknown LLM_PROVIDER '{LLM_PROVIDER}'. Use 'ollama' or 'groq'.")
+
+
+# The app starts even if the AI service is down; AI requests return 503 until it's reachable. See /health.
+llm = make_llm_client()
 _startup_health = llm.check_health()
-if not _startup_health["ollama_reachable"]:
-    logger.warning(f"Ollama is not reachable at {OLLAMA_API_BASE}. AI features will fail until it is running.")
+if not _startup_health["reachable"]:
+    if llm.provider == "ollama":
+        logger.warning(f"Ollama is not reachable at {OLLAMA_API_BASE}. AI features will fail until it is running.")
+    else:
+        logger.warning("The Groq API is not reachable, or GROQ_API_KEY is missing or invalid.")
 elif not _startup_health["model_available"]:
-    logger.warning(f"Model '{llm.model}' is not installed. Run: ollama pull {llm.model}")
+    hint = f" Run: ollama pull {llm.model}" if llm.provider == "ollama" else ""
+    logger.warning(f"Model '{llm.model}' is not available.{hint}")
 else:
-    logger.info(f"Ollama client initialized successfully (model: {OLLAMA_MODEL})")
+    logger.info(f"AI ready: {llm.provider} (model: {llm.model})")
+
+# Per-visitor limits on the AI endpoints, so nobody can use up the shared AI quota
+rate_limiter = RateLimiter(per_minute=AI_REQUESTS_PER_MINUTE, per_day=AI_REQUESTS_PER_DAY)
+
+
+def ai_rate_limit(request: Request) -> None:
+    """FastAPI dependency on every AI endpoint: 429 once a visitor is over the limit."""
+    key = client_key(request.client.host if request.client else None, request.headers, TRUST_PROXY_HEADERS)
+    blocked = rate_limiter.check(key)
+    if blocked:
+        retry_after, window = blocked
+        if window == "day":
+            detail = f"You've reached today's limit of {rate_limiter.per_day} requests. Please try again tomorrow."
+        else:
+            detail = f"You're sending requests too quickly. Please wait {retry_after} seconds and try again."
+        logger.info(f"Rate limit reached ({window})")
+        raise HTTPException(status_code=429, detail=detail, headers={"Retry-After": str(retry_after)})
 
 # Input limits (configurable, see .env.example)
 MAX_TEXT_CHARS = int(os.getenv("MAX_TEXT_CHARS", "50000"))
@@ -123,45 +166,36 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
     return JSONResponse(status_code=status, content={"detail": detail})
 
 def handle_llm_error(e: Exception) -> HTTPException:
-    """Convert LLM errors to appropriate HTTP exceptions."""
-    error_msg = str(e)
-    logger.error(f"Handling Ollama error: {error_msg}")
+    """Convert LLM errors to the right HTTP status, with a message that's safe to show."""
+    logger.error(f"AI request failed: {type(e).__name__}: {e}")
+    message = getattr(e, "user_message", None)
 
     if isinstance(e, LLMResponseFormatError):
-        return HTTPException(
-            status_code=502,
-            detail="The AI returned its answer in an unexpected format. Please try again."
-        )
-    if isinstance(e, OllamaUnavailableError):
-        return HTTPException(
-            status_code=503,
-            detail="Ollama server is not running. Please start Ollama and try again."
-        )
-    elif isinstance(e, ModelNotFoundError):
-        return HTTPException(
-            status_code=503,
-            detail=f"Required LLM model is not available. Please run 'ollama pull {llm.model}' and try again."
-        )
-    elif isinstance(e, LLMTimeoutError):
-        return HTTPException(
-            status_code=504,
-            detail="The AI model took too long to respond. Please try again with a shorter text."
-        )
-    elif isinstance(e, LLMError):
-        # Any other error reported by Ollama (e.g. the model crashed mid-answer)
-        return HTTPException(
-            status_code=502,
-            detail="The AI service returned an error. Please try again."
-        )
-    else:
-        # Never send raw exception text to the browser. Log it under a short
-        # ID the user can quote, so the full trace can be found in the logs.
-        error_id = uuid.uuid4().hex[:8]
-        logger.error(f"Unexpected error [{error_id}]: {traceback.format_exc()}")
-        return HTTPException(
-            status_code=500,
-            detail=f"Something went wrong while processing your request (error ID: {error_id}). Please try again."
-        )
+        return HTTPException(status_code=502, detail="The AI returned its answer in an unexpected format. Please try again.")
+    if isinstance(e, LLMRateLimitedError):
+        headers = {"Retry-After": str(e.retry_after)} if e.retry_after else None
+        return HTTPException(status_code=429, headers=headers,
+                             detail="CaseWise is very busy right now. Please try again in a minute.")
+    if isinstance(e, DocumentTooLongError):
+        return HTTPException(status_code=413,
+                             detail="This document is too long for the AI to read in one go. Please try a shorter section.")
+    if isinstance(e, ServiceUnavailableError):
+        return HTTPException(status_code=503, detail=message or "The AI service is temporarily unavailable. Please try again shortly.")
+    if isinstance(e, ModelNotFoundError):
+        return HTTPException(status_code=503, detail=message or "The AI model isn't available right now. Please try again later.")
+    if isinstance(e, LLMTimeoutError):
+        return HTTPException(status_code=504, detail="The AI model took too long to respond. Please try again with a shorter text.")
+    if isinstance(e, LLMError):
+        # Any other error reported by the AI service (e.g. the model crashed mid-answer)
+        return HTTPException(status_code=502, detail="The AI service returned an error. Please try again.")
+    # Never send raw exception text to the browser. Log it under a short
+    # ID the user can quote, so the full trace can be found in the logs.
+    error_id = uuid.uuid4().hex[:8]
+    logger.error(f"Unexpected error [{error_id}]: {traceback.format_exc()}")
+    return HTTPException(
+        status_code=500,
+        detail=f"Something went wrong while processing your request (error ID: {error_id}). Please try again."
+    )
 
 def extract_pdf_text(file: UploadFile) -> str:
     """Read an uploaded PDF and return its text. Raises HTTP 400/413 for bad input."""
@@ -197,7 +231,7 @@ def extract_pdf_text(file: UploadFile) -> str:
 def health():
     """Liveness + dependency check. Always 200 while the web app is up."""
     llm_status = llm.check_health()
-    ok = llm_status["ollama_reachable"] and llm_status["model_available"]
+    ok = llm_status["reachable"] and llm_status["model_available"]
     return {"status": "ok" if ok else "degraded", **llm_status}
 
 @app.get("/", response_class=HTMLResponse)
@@ -243,27 +277,27 @@ def run_tool(name: str, task, text: str):
 
 # ---------- Text endpoints ----------
 
-@app.post("/legal-assistant")
+@app.post("/legal-assistant", dependencies=[Depends(ai_rate_limit)])
 def legal_assistant(question: Question):
     logger.info(f"Legal assistant request received ({len(question.question)} chars)")
     return {"response": run_tool("Legal assistant", llm.legal_assistant, question.question)}
 
-@app.post("/generate-document")
+@app.post("/generate-document", dependencies=[Depends(ai_rate_limit)])
 def generate_document(request: DocumentRequest):
     logger.info(f"Document generation request received ({len(request.prompt)} chars)")
     return {"response": run_tool("Document generation", llm.generate_document, request.prompt)}
 
-@app.post("/analyze-contract")
+@app.post("/analyze-contract", dependencies=[Depends(ai_rate_limit)])
 def analyze_contract(request: ContractRequest):
     logger.info("Contract analysis request received")
     return run_tool("Contract analysis", llm.analyze_contract, request.contract_text)
 
-@app.post("/check-compliance")
+@app.post("/check-compliance", dependencies=[Depends(ai_rate_limit)])
 def check_compliance(request: ComplianceRequest):
     logger.info("Compliance check request received")
     return run_tool("Compliance check", llm.check_compliance, request.legal_text)
 
-@app.post("/simplify-document")
+@app.post("/simplify-document", dependencies=[Depends(ai_rate_limit)])
 def simplify_document(request: SimplificationRequest):
     logger.info("Simplification request received")
     return {"response": run_tool("Simplification", llm.simplify_document, request.legal_text)}
@@ -271,17 +305,17 @@ def simplify_document(request: SimplificationRequest):
 
 # ---------- PDF endpoints: same tools, text comes from an uploaded PDF ----------
 
-@app.post("/simplify-document-pdf")
+@app.post("/simplify-document-pdf", dependencies=[Depends(ai_rate_limit)])
 def simplify_document_pdf(file: UploadFile = File(...)):
     logger.info("PDF received for simplification")
     return {"response": run_tool("Simplification (PDF)", llm.simplify_document, extract_pdf_text(file))}
 
-@app.post("/analyze-contract-pdf")
+@app.post("/analyze-contract-pdf", dependencies=[Depends(ai_rate_limit)])
 def analyze_contract_pdf(file: UploadFile = File(...)):
     logger.info("PDF received for contract analysis")
     return run_tool("Contract analysis (PDF)", llm.analyze_contract, extract_pdf_text(file))
 
-@app.post("/check-compliance-pdf")
+@app.post("/check-compliance-pdf", dependencies=[Depends(ai_rate_limit)])
 def check_compliance_pdf(file: UploadFile = File(...)):
     logger.info("PDF received for compliance check")
     return run_tool("Compliance check (PDF)", llm.check_compliance, extract_pdf_text(file))
