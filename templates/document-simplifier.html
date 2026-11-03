@@ -285,7 +285,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             
             // Display the response
-            responseArea.innerHTML = `<div class="simplified-text">${data.response}</div>`;
+            responseArea.innerHTML = `<div class="simplified-text">${escapeHtml(data.response)}</div>`;
             
             // Clear the file input
             pdfUpload.value = '';
@@ -294,7 +294,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error:', error);
             responseArea.innerHTML = `<div class="error-message">
                 <h3>Error</h3>
-                <p>${error.message}</p>
+                <p>${escapeHtml(error.message)}</p>
             </div>`;
         } finally {
             loadingIndicator.style.display = 'none';
@@ -331,7 +331,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             
             // Display the response
-            responseArea.innerHTML = `<div class="simplified-text">${data.response}</div>`;
+            responseArea.innerHTML = `<div class="simplified-text">${escapeHtml(data.response)}</div>`;
             
             // Clear the input
             documentInput.value = '';
@@ -339,7 +339,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error:', error);
             responseArea.innerHTML = `<div class="error-message">
                 <h3>Error</h3>
-                <p>${error.message}</p>
+                <p>${escapeHtml(error.message)}</p>
             </div>`;
         } finally {
             loadingIndicator.style.display = 'none';

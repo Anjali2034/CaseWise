@@ -22,7 +22,7 @@ Tracks every fix and feature. Each item is done in its own commit.
 - [ ] Add README.md and `.env.example`
 
 ### Security and correctness
-- [ ] Fix XSS: escape LLM output and error messages before inserting into the page (contract analyzer, compliance checker, simplifier)
+- [x] Fix XSS: escape LLM output and error messages before inserting into the page (contract analyzer, compliance checker, simplifier)
 - [ ] Stop blocking the server: make LLM endpoints non-blocking (`def` endpoints or async HTTP client)
 - [ ] Don't crash on startup when Ollama is unreachable; add a `/health` endpoint
 - [ ] Fix 400 errors being returned as 500 (empty text, unreadable PDF)
@@ -97,4 +97,5 @@ Tracks every fix and feature. Each item is done in its own commit.
 
 | # | Change | Commit |
 |---|--------|--------|
-| 1 | Baseline: existing code, checklist, .gitignore | _(your commit)_ |
+| 1 | Baseline: existing code, checklist, .gitignore | `734b44a` |
+| 2 | Fix XSS: shared `escapeHtml()` in base.html, used on every `innerHTML` insert | _(your commit)_ |

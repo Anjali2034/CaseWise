@@ -298,7 +298,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error:', error);
             responseArea.innerHTML = `<div class="error-message">
                 <h3>Error</h3>
-                <p>${error.message}</p>
+                <p>${escapeHtml(error.message)}</p>
             </div>`;
         } finally {
             loadingIndicator.style.display = 'none';
@@ -352,7 +352,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error occurred:', error);
             responseArea.innerHTML = `<div class="error-message">
                 <h3>Error</h3>
-                <p>${error.message}</p>
+                <p>${escapeHtml(error.message)}</p>
             </div>`;
         } finally {
             console.log('Hiding loading indicator');
@@ -364,7 +364,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (data.error) {
             return `<div class="error-message">
                 <h3>Error</h3>
-                <p>${data.error}</p>
+                <p>${escapeHtml(data.error)}</p>
             </div>`;
         }
 
@@ -377,7 +377,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <h3>Missing Clauses</h3>
                     <ul>
                         ${data.missing_clauses.map(clause => `
-                            <li>${clause}</li>
+                            <li>${escapeHtml(clause)}</li>
                         `).join('')}
                     </ul>
                 </div>
@@ -391,7 +391,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <h3>Compliance Issues</h3>
                     <ul>
                         ${data.compliance_issues.map(issue => `
-                            <li>${issue}</li>
+                            <li>${escapeHtml(issue)}</li>
                         `).join('')}
                     </ul>
                 </div>
@@ -405,7 +405,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <h3>Recommendations</h3>
                     <ul>
                         ${data.recommendations.map(rec => `
-                            <li>${rec}</li>
+                            <li>${escapeHtml(rec)}</li>
                         `).join('')}
                     </ul>
                 </div>
@@ -417,7 +417,7 @@ document.addEventListener('DOMContentLoaded', function() {
             html += `
                 <div class="compliance-section">
                     <h3>Summary</h3>
-                    <p>${data.summary}</p>
+                    <p>${escapeHtml(data.summary)}</p>
                 </div>
             `;
         }
