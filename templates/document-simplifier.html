@@ -196,7 +196,6 @@ textarea:focus {
     padding: 1rem;
     background-color: var(--card-bg);
     border-radius: 12px;
-    white-space: pre-wrap;
     word-wrap: break-word;
     color: var(--text-color);
 }
@@ -267,7 +266,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             
             // Display the response
-            responseArea.innerHTML = `<div class="simplified-text">${escapeHtml(data.response)}</div>`;
+            responseArea.innerHTML = `<div class="simplified-text plain-text">${escapeHtml(data.response)}</div>`;
             
             // Clear the file input
             pdfUpload.value = '';
@@ -313,7 +312,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             
             // Display the response
-            responseArea.innerHTML = `<div class="simplified-text">${escapeHtml(data.response)}</div>`;
+            responseArea.innerHTML = `<div class="simplified-text plain-text">${escapeHtml(data.response)}</div>`;
             
             // Clear the input
             documentInput.value = '';

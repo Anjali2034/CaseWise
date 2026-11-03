@@ -38,11 +38,17 @@ button {
     border: 1px solid var(--border-color);
     border-radius: 6px;
     background-color: var(--card-bg);
-    white-space: pre-wrap;
     word-wrap: break-word;
     text-align: left;
     font-size: 0.9rem;
     color: var(--text-color);
+}
+
+/* Plain-text answers (generated documents, simplified text): keep the model's
+   line breaks. Not on .response-area itself, because the HTML results built
+   from indented template strings would then show all that indentation. */
+.plain-text {
+    white-space: pre-wrap;
 }
 
 /* Only show the result box once there is a result (or an error) in it */

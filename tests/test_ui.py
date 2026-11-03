@@ -56,6 +56,30 @@ def test_result_box_starts_truly_empty_and_is_announced(client, path):
     assert '<div id="response" class="response-area" aria-live="polite"></div>' in client.get(path).text
 
 
+# ---------- no blank gaps in HTML results (fix #19) ----------
+
+def css_rule(css, selector):
+    m = re.search(r"^" + re.escape(selector) + r" \{([^}]*)\}", css, re.M)
+    return m.group(1) if m else ""
+
+
+@pytest.mark.parametrize("source", ["static/css/styles.css", "templates/compliance-checker.html",
+                                    "templates/contract-analyzer.html", "templates/document-generator.html",
+                                    "templates/document-simplifier.html"])
+def test_result_container_does_not_preserve_whitespace(source):
+    """pre-wrap on the container turned the HTML template's indentation into big blank gaps."""
+    assert "white-space" not in css_rule(Path(source).read_text(encoding="utf-8"), ".response-area")
+
+
+def test_plain_text_answers_keep_their_line_breaks():
+    assert "white-space: pre-wrap" in css_rule(STYLES, ".plain-text")
+    simplifier = Path("templates/document-simplifier.html").read_text(encoding="utf-8")
+    assert simplifier.count('class="simplified-text plain-text"') == 2  # text upload and PDF upload
+    generator = Path("templates/document-generator.html").read_text(encoding="utf-8")
+    assert "documentText.className = 'plain-text'" in generator
+    assert "documentText.textContent = data.response" in generator  # still textContent: no XSS
+
+
 # ---------- global CSS must not override page components (fix #15) ----------
 
 def test_no_global_rules_that_restyle_every_textarea_or_submit_button():

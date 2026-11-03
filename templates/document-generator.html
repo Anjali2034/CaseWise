@@ -141,7 +141,6 @@ textarea:focus {
     padding: 1rem;
     background-color: var(--card-bg);
     border-radius: 12px;
-    white-space: pre-wrap;
     word-wrap: break-word;
 }
 
@@ -210,7 +209,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             
             // Display the response
-            responseArea.textContent = data.response;
+            const documentText = document.createElement('div');
+            documentText.className = 'plain-text';
+            documentText.textContent = data.response;
+            responseArea.replaceChildren(documentText);
             
             // Clear the input
             promptInput.value = '';
