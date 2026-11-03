@@ -338,7 +338,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Handle PDF upload
-    pdfUpload.addEventListener('change', async function(e) {
+    pdfUpload.addEventListener('change', whileBusy(async function(e) {
         const file = e.target.files[0];
         if (!file) return;
 
@@ -382,10 +382,10 @@ document.addEventListener('DOMContentLoaded', function() {
         } finally {
             loadingIndicator.style.display = 'none';
         }
-    });
+    }));
 
     // Handle text input
-    form.addEventListener('submit', async function(e) {
+    form.addEventListener('submit', whileBusy(async function(e) {
         e.preventDefault();
         
         const contract = contractInput.value.trim();
@@ -428,7 +428,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } finally {
             loadingIndicator.style.display = 'none';
         }
-    });
+    }));
 });
 </script>
 {% endblock %} 

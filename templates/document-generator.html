@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const loadingIndicator = document.getElementById('loading');
 
 
-    form.addEventListener('submit', async function(e) {
+    form.addEventListener('submit', whileBusy(async function(e) {
         e.preventDefault();
         
         const prompt = promptInput.value.trim();
@@ -222,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } finally {
             loadingIndicator.style.display = 'none';
         }
-    });
+    }));
 });
 </script>
 {% endblock %} 

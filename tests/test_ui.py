@@ -80,6 +80,32 @@ def test_plain_text_answers_keep_their_line_breaks():
     assert "documentText.textContent = data.response" in generator  # still textContent: no XSS
 
 
+# ---------- one request at a time (fix #20) ----------
+
+REQUEST_HANDLERS = {  # template -> number of handlers that send a request
+    "legal-assistant.html": 1, "document-generator.html": 1, "contract-analyzer.html": 2,
+    "compliance-checker.html": 2, "document-simplifier.html": 2,
+}
+
+
+def test_whilebusy_helper_is_defined_in_base():
+    base = Path("templates/base.html").read_text(encoding="utf-8")
+    assert "function whileBusy(handler)" in base
+    assert "finally {" in base.split("function whileBusy(handler)", 1)[1].split("// Mobile menu toggle")[0]
+
+
+@pytest.mark.parametrize("template, expected", REQUEST_HANDLERS.items())
+def test_every_request_handler_is_wrapped_in_whilebusy(template, expected):
+    js = (Path("templates") / template).read_text(encoding="utf-8")
+    handlers = re.findall(r"addEventListener\('(?:submit|change)', (whileBusy\()?async function", js)
+    assert len(handlers) == expected
+    assert all(handlers), f"{template}: a submit/upload handler is not wrapped in whileBusy()"
+
+
+def test_upload_box_looks_disabled_while_busy():
+    assert re.search(r'\.chat-input-container\[aria-busy="true"\] \.upload-label \{[^}]*pointer-events: none', STYLES)
+
+
 # ---------- global CSS must not override page components (fix #15) ----------
 
 def test_no_global_rules_that_restyle_every_textarea_or_submit_button():

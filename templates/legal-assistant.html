@@ -252,7 +252,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Handle form submission
-    form.addEventListener('submit', async function(e) {
+    form.addEventListener('submit', whileBusy(async function(e) {
         e.preventDefault();
         
         const question = textarea.value.trim();
@@ -304,7 +304,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Scroll to bottom
         chatMessages.scrollTop = chatMessages.scrollHeight;
-    });
+    }));
 
     // New chat button
     newChatBtn.addEventListener('click', function() {

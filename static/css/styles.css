@@ -51,6 +51,14 @@ button {
     white-space: pre-wrap;
 }
 
+/* While a request is running (see whileBusy in base.html) the inputs are
+   disabled; make the upload box look disabled too. */
+.chat-input-container[aria-busy="true"] .upload-label {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 /* Only show the result box once there is a result (or an error) in it */
 .response-area:empty {
     display: none;

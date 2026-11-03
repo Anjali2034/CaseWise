@@ -74,6 +74,32 @@
             return new Error(detail || `Request failed (status ${response.status})`);
         }
 
+        // Wrap a submit/upload handler so only one request runs at a time.
+        // While it runs, every control in the tool's input area is disabled, so a
+        // double click or a second upload can't send a duplicate request.
+        function whileBusy(handler) {
+            return async function (event) {
+                const area = event.currentTarget.closest('.chat-input-container') || event.currentTarget;
+                if (area.getAttribute('aria-busy') === 'true') {
+                    event.preventDefault();
+                    return;
+                }
+                const controls = [...area.querySelectorAll('button, textarea, input')];
+                area.setAttribute('aria-busy', 'true');
+                controls.forEach(control => { control.disabled = true; });
+                try {
+                    return await handler.call(this, event);
+                } finally {
+                    controls.forEach(control => { control.disabled = false; });
+                    area.removeAttribute('aria-busy');
+                    if (event.type === 'submit') {
+                        const textarea = area.querySelector('textarea');
+                        if (textarea) textarea.focus();
+                    }
+                }
+            };
+        }
+
         // Mobile menu toggle
         const mobileMenuButton = document.querySelector('.mobile-menu-button');
         const mobileMenu = document.querySelector('.mobile-menu');
