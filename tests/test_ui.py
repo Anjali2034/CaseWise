@@ -131,6 +131,43 @@ def test_every_page_shows_the_servers_own_error_message(template):
     assert "Server error:" not in js and "HTTP error!" not in js
 
 
+# ---------- shared, keyboard-accessible PDF upload box (fix #22) ----------
+
+UPLOAD_PAGES = {"/contract-analyzer": "Upload PDF Contract",
+                "/compliance-checker": "Upload PDF Document",
+                "/document-simplifier": "Upload PDF Document"}
+
+
+@pytest.mark.parametrize("path, label", UPLOAD_PAGES.items())
+def test_upload_box_has_a_visible_icon_and_label(client, path, label):
+    html = client.get(path).text
+    section = html.split('<div class="upload-section">', 1)[1].split('<form', 1)[0]
+    assert "<svg" in section            # inline icon, needs no icon font
+    assert f"<span>{label}</span>" in section
+    assert 'class="fas' not in html     # Font Awesome is never loaded
+
+
+@pytest.mark.parametrize("path", UPLOAD_PAGES)
+def test_upload_input_stays_keyboard_reachable(client, path):
+    html = client.get(path).text
+    assert '<input type="file" id="pdfUpload" class="file-input"' in html
+    assert 'style="display: none' not in html
+    # input before its label, so the focus ring selector can work
+    assert html.index('id="pdfUpload"') < html.index('for="pdfUpload"')
+
+
+def test_upload_css_hides_input_visually_but_not_from_keyboard():
+    block = css_rule(STYLES, ".file-input")
+    assert "opacity: 0" in block and "display: none" not in block
+    assert ".file-input:focus-visible + .upload-label" in STYLES
+
+
+@pytest.mark.parametrize("template", ["contract-analyzer.html", "compliance-checker.html", "document-simplifier.html"])
+def test_pages_do_not_carry_their_own_upload_css(template):
+    css = (Path("templates") / template).read_text(encoding="utf-8")
+    assert not re.search(r"^\.(upload-|file-input|file-info)", css, re.M)
+
+
 # ---------- global CSS must not override page components (fix #15) ----------
 
 def test_no_global_rules_that_restyle_every_textarea_or_submit_button():

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "partials/disclaimer.html" import disclaimer %}
+{% from "partials/upload.html" import upload_box %}
 
 {% block title %}Contract Analyzer - LegalEdge AI{% endblock %}
 
@@ -14,15 +15,9 @@
         </div>
 
         <div class="chat-input-container">
+            {{ upload_box("Upload PDF Contract") }}
+
             <form id="contractForm" class="chat-form">
-                <div class="upload-section">
-                    <label for="pdfUpload" class="upload-label">
-                        <i class="fas fa-file-pdf"></i>
-                        <span>Upload PDF Contract</span>
-                        <input type="file" id="pdfUpload" accept=".pdf" class="file-input" />
-                    </label>
-                    <div id="fileInfo" class="file-info"></div>
-                </div>
                 <div class="input-wrapper">
                     <textarea 
                         id="contract" 
@@ -173,44 +168,6 @@ textarea:focus {
     .chat-input-container {
         padding: 1rem;
     }
-}
-
-.upload-section {
-    max-width: 800px;
-    margin: 0 auto 1rem;
-}
-
-.upload-label {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 1rem;
-    background-color: var(--card-bg);
-    border: 2px dashed rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.upload-label:hover {
-    border-color: var(--primary-color);
-    background-color: rgba(76, 175, 80, 0.1);
-}
-
-.upload-label i {
-    font-size: 1.5rem;
-    color: var(--primary-color);
-}
-
-.file-input {
-    display: none;
-}
-
-.file-info {
-    margin-top: 0.5rem;
-    font-size: 0.9rem;
-    color: var(--text-color);
-    opacity: 0.8;
 }
 
 .analysis-result {

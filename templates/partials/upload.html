@@ -1,0 +1,22 @@
+{# Shared PDF upload box for the tools that accept PDFs.
+   Usage: {% from "partials/upload.html" import upload_box %}
+          {{ upload_box("Upload PDF Contract") }}
+   The page's JavaScript listens for "change" on #pdfUpload and writes the
+   chosen file name into #fileInfo.
+   The input comes before the label so CSS can show a focus ring on the box
+   when the (visually hidden) input is reached with the Tab key. #}
+{% macro upload_box(label) -%}
+<div class="upload-section">
+    <input type="file" id="pdfUpload" class="file-input" accept=".pdf,application/pdf">
+    <label for="pdfUpload" class="upload-label">
+        <span class="upload-content">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 16L12 8M12 8L15 11M12 8L9 11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M3 15V16C3 18.2091 4.79086 20 7 20H17C19.2091 20 21 18.2091 21 16V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>{{ label }}</span>
+        </span>
+    </label>
+    <div id="fileInfo" class="file-info" aria-live="polite"></div>
+</div>
+{%- endmacro %}

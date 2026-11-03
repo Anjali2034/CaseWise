@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "partials/disclaimer.html" import disclaimer %}
+{% from "partials/upload.html" import upload_box %}
 
 {% block title %}Document Simplifier - AutoDocuGen AI Suite{% endblock %}
 
@@ -14,19 +15,8 @@
         </div>
 
         <div class="chat-input-container">
-            <div class="upload-section">
-                <label for="pdfUpload" class="upload-label">
-                    <div class="upload-content">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 16L12 8M12 8L15 11M12 8L9 11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M3 15V16C3 18.2091 4.79086 20 7 20H17C19.2091 20 21 18.2091 21 16V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <span>Upload PDF Document</span>
-                    </div>
-                </label>
-                <input type="file" id="pdfUpload" accept=".pdf" style="display: none;">
-                <div id="fileInfo" class="file-info"></div>
-            </div>
+
+            {{ upload_box("Upload PDF Document") }}
 
             <form id="simplifierForm" class="chat-form">
                 <div class="input-wrapper">
@@ -88,47 +78,6 @@
 .welcome-message p {
     color: rgba(255, 255, 255, 0.7);
     font-size: 1.1rem;
-}
-
-.upload-section {
-    max-width: 800px;
-    margin: 0 auto 1rem;
-    text-align: center;
-}
-
-.upload-label {
-    display: block;
-    padding: 1.5rem;
-    background-color: var(--card-bg);
-    border: 2px dashed rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.upload-label:hover {
-    border-color: var(--primary-color);
-    background-color: rgba(255, 255, 255, 0.05);
-}
-
-.upload-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--text-color);
-}
-
-.upload-content svg {
-    width: 32px;
-    height: 32px;
-    color: var(--primary-color);
-}
-
-.file-info {
-    margin-top: 0.5rem;
-    color: var(--text-color);
-    font-size: 0.9rem;
 }
 
 .chat-input-container {
