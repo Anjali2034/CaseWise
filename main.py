@@ -5,7 +5,13 @@ from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
-from ollama_client import OllamaClient, LLMResponseFormatError
+from ollama_client import (
+    OllamaClient,
+    LLMResponseFormatError,
+    LLMTimeoutError,
+    ModelNotFoundError,
+    OllamaUnavailableError,
+)
 import traceback
 import logging
 import os
@@ -74,15 +80,20 @@ def handle_ollama_error(e: Exception) -> HTTPException:
             status_code=502,
             detail="The AI returned its answer in an unexpected format. Please try again."
         )
-    if "Could not connect to Ollama server" in error_msg:
+    if isinstance(e, OllamaUnavailableError):
         return HTTPException(
             status_code=503,
             detail="Ollama server is not running. Please start Ollama and try again."
         )
-    elif "Model" in error_msg and "is not available" in error_msg:
+    elif isinstance(e, ModelNotFoundError):
         return HTTPException(
             status_code=503,
-            detail="Required LLM model is not available. Please run 'ollama pull phi' and try again."
+            detail=f"Required LLM model is not available. Please run 'ollama pull {ollama_client.model}' and try again."
+        )
+    elif isinstance(e, LLMTimeoutError):
+        return HTTPException(
+            status_code=504,
+            detail="The AI model took too long to respond. Please try again with a shorter text."
         )
     else:
         logger.error(f"Unexpected error: {traceback.format_exc()}")

@@ -11,7 +11,23 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class LLMResponseFormatError(Exception):
+class LLMError(Exception):
+    """Base class for errors talking to the language model."""
+
+
+class OllamaUnavailableError(LLMError):
+    """The Ollama server could not be reached."""
+
+
+class ModelNotFoundError(LLMError):
+    """The configured model is not installed in Ollama."""
+
+
+class LLMTimeoutError(LLMError):
+    """The model did not answer within the read timeout."""
+
+
+class LLMResponseFormatError(LLMError):
     """The model replied, but not in the structure we asked for (e.g. invalid JSON)."""
 
 
@@ -19,9 +35,10 @@ class OllamaClient:
     def __init__(self, base_url="http://localhost:11434"):
         self.base_url = base_url
         self.model = "llama2"
-        self.timeout = 120  # Increased timeout to 120 seconds
-        self.max_retries = 3
-        self.retry_delay = 2  # Delay between retries in seconds
+        self.connect_timeout = 5   # seconds to establish the connection
+        self.read_timeout = 120    # max seconds to wait between streamed chunks
+        self.max_attempts = 2      # 1 retry, transient errors only
+        self.retry_delay = 1       # seconds between attempts
 
     def check_health(self) -> Dict[str, Any]:
         """Report whether the Ollama server is reachable and the model is installed.
@@ -41,74 +58,72 @@ class OllamaClient:
             return {"ollama_reachable": False, "model": self.model, "model_available": False}
 
     def _generate_stream(self, prompt, system_prompt=None):
-        """Generate a stream of text from the model."""
-        max_retries = self.max_retries
-        retry_count = 0
-        
-        while retry_count < max_retries:
+        """Stream text chunks from the model.
+
+        Retry policy: only transient failures (connection errors, 5xx) are retried,
+        only once, and only before any text has been yielded, so partial output is
+        never duplicated. Timeouts and 4xx errors fail immediately.
+        """
+        payload = {"model": self.model, "prompt": prompt, "system": system_prompt, "stream": True}
+        attempt = 0
+        yielded_any = False
+
+        while True:
+            attempt += 1
             try:
-                logger.info(f"Making request to Ollama server (attempt {retry_count + 1}/{max_retries})")
-                response = requests.post(
+                logger.info(f"Making request to Ollama server (attempt {attempt}/{self.max_attempts})")
+                with requests.post(
                     f"{self.base_url}/api/generate",
-                    json={
-                        "model": self.model,
-                        "prompt": prompt,
-                        "system": system_prompt,
-                        "stream": True
-                    },
-                    timeout=120  # Increased timeout to 120 seconds
-                )
-                response.raise_for_status()
-                
-                for line in response.iter_lines():
-                    if line:
-                        try:
-                            json_response = json.loads(line)
-                            if 'response' in json_response:
-                                yield json_response['response']
-                            if json_response.get('done', False):
-                                break
-                        except json.JSONDecodeError as e:
-                            logger.error(f"Error decoding JSON response: {str(e)}")
-                            logger.error(f"Raw response: {line}")
+                    json=payload,
+                    stream=True,  # read the reply as it is generated
+                    timeout=(self.connect_timeout, self.read_timeout),
+                ) as response:
+                    if response.status_code == 404:
+                        raise ModelNotFoundError(
+                            f"Model '{self.model}' is not available. Run 'ollama pull {self.model}'."
+                        )
+                    response.raise_for_status()
+
+                    for line in response.iter_lines():
+                        if not line:
                             continue
-                
-                return  # Successfully completed
-                
+                        try:
+                            data = json.loads(line)
+                        except json.JSONDecodeError:
+                            logger.warning("Skipping a malformed line from the Ollama stream")
+                            continue
+                        if data.get("error"):
+                            raise LLMError(f"Ollama error: {data['error']}")
+                        if data.get("response"):
+                            yielded_any = True
+                            yield data["response"]
+                        if data.get("done"):
+                            break
+                return
+
             except requests.exceptions.Timeout as e:
-                retry_count += 1
-                logger.error(f"Attempt {retry_count} failed: {str(e)}")
-                if retry_count < max_retries:
-                    logger.info(f"Retrying in 2 seconds...")
-                    time.sleep(2)
-                else:
-                    raise Exception(f"Failed to generate response after {max_retries} attempts: {str(e)}")
-                    
-            except requests.exceptions.ConnectionError as e:
-                retry_count += 1
-                logger.error(f"Attempt {retry_count} failed: {str(e)}")
-                if retry_count < max_retries:
-                    logger.info(f"Retrying in 2 seconds...")
-                    time.sleep(2)
-                else:
-                    # main.handle_ollama_error matches on this text to return a 503
-                    raise Exception(
+                logger.error(f"Ollama request timed out: {e}")
+                raise LLMTimeoutError("The AI model took too long to respond.") from e
+
+            except (requests.exceptions.ConnectionError, requests.exceptions.HTTPError) as e:
+                is_5xx = isinstance(e, requests.exceptions.HTTPError) and e.response is not None                     and e.response.status_code >= 500
+                transient = isinstance(e, requests.exceptions.ConnectionError) or is_5xx
+                if transient and not yielded_any and attempt < self.max_attempts:
+                    logger.warning(f"Attempt {attempt} failed ({e}); retrying in {self.retry_delay}s")
+                    time.sleep(self.retry_delay)
+                    continue
+                logger.error(f"Ollama request failed: {e}")
+                if isinstance(e, requests.exceptions.ConnectionError) and not yielded_any:
+                    raise OllamaUnavailableError(
                         "Could not connect to Ollama server. Please make sure it's running by executing 'ollama serve' in a terminal."
-                    )
+                    ) from e
+                raise LLMError(f"Ollama request failed: {e}") from e
 
             except requests.exceptions.RequestException as e:
-                retry_count += 1
-                logger.error(f"Attempt {retry_count} failed: {str(e)}")
-                if retry_count < max_retries:
-                    logger.info(f"Retrying in 2 seconds...")
-                    time.sleep(2)
-                else:
-                    raise Exception(f"Failed to generate response after {max_retries} attempts: {str(e)}")
-                    
-            except Exception as e:
-                logger.error(f"Unexpected error: {str(e)}")
-                logger.error(f"Stack trace: {traceback.format_exc()}")
-                raise
+                # e.g. the stream was cut off mid-response (ChunkedEncodingError).
+                # Never retried: some text may already have been yielded.
+                logger.error(f"Ollama stream failed: {e}")
+                raise LLMError(f"Ollama stream failed: {e}") from e
 
     def generate_document(self, prompt: str) -> str:
         """Generate a legal document based on the prompt."""
