@@ -219,6 +219,41 @@ def test_no_dead_error_field_branches(template):
     assert "data.error" not in js and "raw_response" not in js
 
 
+# ---------- one shared stylesheet (fix #25) ----------
+
+SHARED_SELECTORS = [".chat-container", ".chat-main", ".chat-messages", ".welcome-message", ".chat-input-container",
+                    ".chat-form", ".input-wrapper", ".send-button", ".disclaimer", ".response-area",
+                    ".result-section", ".error-message"]
+
+
+@pytest.mark.parametrize("template", ["document-generator.html", "contract-analyzer.html",
+                                      "compliance-checker.html", "document-simplifier.html"])
+def test_tool_pages_have_no_copied_css(template):
+    assert "{% block extra_css %}" not in (Path("templates") / template).read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("selector", SHARED_SELECTORS)
+def test_shared_rules_are_defined_once_in_styles_css(selector):
+    assert len(re.findall(r"(?m)^" + re.escape(selector) + r" \{", STYLES)) == 1
+    for template in Path("templates").rglob("*.html"):
+        assert not re.search(r"(?m)^" + re.escape(selector) + r" \{", template.read_text(encoding="utf-8")), template.name
+
+
+def test_legal_assistant_only_keeps_its_own_components():
+    css = Path("templates/legal-assistant.html").read_text(encoding="utf-8").split("{% block extra_css %}")[1].split("{% endblock %}")[0]
+    selectors = {s.strip() for s in re.findall(r"(?m)^([.\w][^{\n]*) \{", css)}
+    assert selectors <= {".chat-sidebar", ".new-chat", ".new-chat-btn", ".new-chat-btn:hover", ".plus-icon",
+                         ".chat-history", ".message", ".message.user", ".message.assistant", ".message-content",
+                         ".message-text"}, selectors
+
+
+@pytest.mark.parametrize("template, old", [("contract-analyzer.html", "analysis-"), ("compliance-checker.html", "compliance-")])
+def test_both_result_pages_use_the_same_result_classes(template, old):
+    js = (Path("templates") / template).read_text(encoding="utf-8")
+    assert 'class="result"' in js and 'class="result-section"' in js
+    assert f'class="{old}' not in js
+
+
 # ---------- global CSS must not override page components (fix #15) ----------
 
 def test_no_global_rules_that_restyle_every_textarea_or_submit_button():

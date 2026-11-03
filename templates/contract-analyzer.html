@@ -39,185 +39,6 @@
 </section>
 {% endblock %}
 
-{% block extra_css %}
-<style>
-.chat-container {
-    display: flex;
-    height: calc(100vh - 60px);
-    margin-top: 60px;
-    background-color: var(--bg-color);
-}
-
-.chat-main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    background-color: var(--bg-color);
-}
-
-.chat-messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 2rem;
-}
-
-.welcome-message {
-    text-align: center;
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 2rem;
-}
-
-.welcome-message h1 {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-    color: var(--text-color);
-}
-
-.welcome-message p {
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 1.1rem;
-}
-
-.chat-input-container {
-    padding: 1.5rem;
-    background-color: var(--bg-color);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.chat-form {
-    max-width: 800px;
-    margin: 0 auto;
-}
-
-.input-wrapper {
-    position: relative;
-    display: flex;
-    align-items: flex-end;
-    background-color: var(--card-bg);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 0.75rem;
-}
-
-textarea {
-    flex: 1;
-    background: none;
-    border: none;
-    color: var(--text-color);
-    font-size: 1rem;
-    resize: none;
-    max-height: 200px;
-    padding: 0.5rem;
-    padding-right: 3rem;
-}
-
-textarea:focus {
-    outline: none;
-}
-
-.send-button {
-    background: none;
-    border: none;
-    color: var(--primary-color);
-    padding: 0.5rem;
-    cursor: pointer;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-}
-
-.send-button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-}
-
-.send-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.response-area {
-    max-width: 800px;
-    margin: 1rem auto;
-    padding: 1rem;
-    background-color: var(--card-bg);
-    border-radius: 12px;
-    word-wrap: break-word;
-}
-
-.disclaimer {
-    text-align: center;
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 0.8rem;
-    margin-top: 0.5rem;
-    max-width: 800px;
-    margin: 0.5rem auto;
-}
-
-@media (max-width: 768px) {
-    .chat-messages {
-        padding: 1rem;
-    }
-    
-    .welcome-message {
-        padding: 1rem;
-    }
-    
-    .chat-input-container {
-        padding: 1rem;
-    }
-}
-
-.analysis-result {
-    color: var(--text-color);
-}
-
-.analysis-section {
-    margin-bottom: 1.5rem;
-}
-
-.analysis-section h3 {
-    color: var(--primary-color);
-    margin-bottom: 0.75rem;
-    font-size: 1.2rem;
-}
-
-.analysis-section ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.analysis-section li {
-    margin-bottom: 0.75rem;
-    padding: 0.75rem;
-    background-color: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-}
-
-.analysis-section li strong {
-    display: block;
-    margin-bottom: 0.25rem;
-    color: var(--primary-color);
-}
-
-.error-message {
-    color: #ff6b6b;
-    padding: 1rem;
-    background-color: rgba(255, 107, 107, 0.1);
-    border-radius: 8px;
-    margin-bottom: 1rem;
-}
-
-.error-message h3 {
-    margin-bottom: 0.5rem;
-}
-
-</style>
-{% endblock %}
-
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -230,12 +51,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const loadingIndicator = document.getElementById('loading');
 
     function formatAnalysisResponse(data) {
-        let html = '<div class="analysis-result">';
+        let html = '<div class="result">';
         
         // Key Clauses
         if (data.key_clauses && data.key_clauses.length > 0) {
             html += `
-                <div class="analysis-section">
+                <div class="result-section">
                     <h3>Key Clauses</h3>
                     <ul>
                         ${data.key_clauses.map(clause => `
@@ -252,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Potential Risks
         if (data.potential_risks && data.potential_risks.length > 0) {
             html += `
-                <div class="analysis-section">
+                <div class="result-section">
                     <h3>Potential Risks</h3>
                     <ul>
                         ${data.potential_risks.map(risk => `
@@ -266,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Summary
         if (data.summary) {
             html += `
-                <div class="analysis-section">
+                <div class="result-section">
                     <h3>Summary</h3>
                     <p>${escapeHtml(data.summary)}</p>
                 </div>
