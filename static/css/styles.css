@@ -1,0 +1,270 @@
+:root {
+    --bg-color: #1a1a1a;
+    --text-color: #ffffff;
+    --primary-color: #3498db;
+    --card-bg: #2d2d2d;
+    --border-color: rgba(255, 255, 255, 0.1);
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+/* General layout */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+.hero {
+    width: 100%;
+    text-align: center;
+    padding: 15px 0;
+    background-color: var(--card-bg);
+    margin-bottom: 15px;
+}
+
+.hero h1 {
+    font-size: 2rem;
+    color: var(--text-color);
+    margin-bottom: 10px;
+}
+
+.hero p {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Main content section */
+section.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 150px);
+    padding: 15px;
+}
+
+.card {
+    width: 100%;
+    max-width: 600px;
+    background: var(--card-bg);
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.card h2 {
+    text-align: center;
+    color: var(--text-color);
+    margin-bottom: 20px;
+    font-size: 1.6rem;
+}
+
+/* Form elements */
+.form-group {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto 20px;
+    text-align: center;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-color);
+    font-weight: 500;
+    text-align: center;
+    font-size: 0.95rem;
+}
+
+textarea {
+    width: 100%;
+    min-height: 150px;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    resize: vertical;
+    transition: border-color 0.3s ease;
+    margin: 0 auto;
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+
+textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+button[type="submit"] {
+    display: block;
+    width: 180px;
+    margin: 15px auto;
+    background-color: var(--primary-color);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+button[type="submit"]:hover {
+    background-color: #2980b9;
+    transform: translateY(-1px);
+}
+
+/* Loading and response areas */
+.loading {
+    display: none;
+    position: relative;
+    padding: 15px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 6px;
+    margin: 15px auto;
+    width: 100%;
+    max-width: 150px;
+}
+
+.loading::after {
+    content: '';
+    display: inline-block;
+    width: 25px;
+    height: 25px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.response-area {
+    width: 100%;
+    max-width: 500px;
+    margin: 15px auto;
+    padding: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background-color: var(--card-bg);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    text-align: left;
+    font-size: 0.9rem;
+    color: var(--text-color);
+}
+
+.error {
+    width: 100%;
+    max-width: 500px;
+    margin: 15px auto;
+    color: #dc3545;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    padding: 12px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.instructions {
+    width: 100%;
+    max-width: 600px;
+    background: var(--card-bg);
+    padding: 20px;
+    border-radius: 8px;
+    margin: 15px auto;
+    text-align: center;
+}
+
+.instructions h3 {
+    color: var(--text-color);
+    margin-bottom: 12px;
+    font-size: 1.2rem;
+}
+
+.instructions ul {
+    list-style-type: disc;
+    padding-left: 20px;
+    margin: 0 auto 12px;
+    display: inline-block;
+    text-align: left;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.instructions li {
+    margin-bottom: 6px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.instructions p {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin-top: 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .card {
+        padding: 15px;
+        max-width: 95%;
+    }
+    
+    .hero h1 {
+        font-size: 1.8rem;
+    }
+    
+    .hero p {
+        font-size: 1rem;
+    }
+    
+    .form-group {
+        max-width: 100%;
+    }
+    
+    textarea {
+        min-height: 120px;
+    }
+    
+    .response-area {
+        max-width: 100%;
+    }
+    
+    .instructions {
+        max-width: 95%;
+    }
+}
+
+/* Add margin-top to main content to account for fixed navbar */
+main {
+    margin-top: 60px;
+} 

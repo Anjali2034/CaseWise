@@ -1,0 +1,455 @@
+{% extends "base.html" %}
+
+{% block title %}Contract Analyzer - LegalEdge AI{% endblock %}
+
+{% block content %}
+<section class="chat-container">
+    <div class="chat-main">
+        <div class="chat-messages">
+            <div class="welcome-message">
+                <h1>Contract Analyzer</h1>
+                <p>Analyze your contracts and legal documents with AI assistance</p>
+            </div>
+        </div>
+
+        <div class="chat-input-container">
+            <form id="contractForm" class="chat-form">
+                <div class="upload-section">
+                    <label for="pdfUpload" class="upload-label">
+                        <i class="fas fa-file-pdf"></i>
+                        <span>Upload PDF Contract</span>
+                        <input type="file" id="pdfUpload" accept=".pdf" class="file-input" />
+                    </label>
+                    <div id="fileInfo" class="file-info"></div>
+                </div>
+                <div class="input-wrapper">
+                    <textarea 
+                        id="contract" 
+                        name="contract" 
+                        placeholder="Or paste your contract or legal document here for analysis..."
+                        rows="3"></textarea>
+                    <button type="submit" class="send-button">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M7 11L12 6L17 11M12 18V7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+            </form>
+            <div id="loading" class="loading"></div>
+            <div id="response" class="response-area"></div>
+            <div class="disclaimer">
+                The analysis provided is for reference only. Always consult with a legal professional for final decisions.
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.chat-container {
+    display: flex;
+    height: calc(100vh - 60px);
+    margin-top: 60px;
+    background-color: var(--bg-color);
+}
+
+.chat-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-color);
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem;
+}
+
+.welcome-message {
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.welcome-message h1 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: var(--text-color);
+}
+
+.welcome-message p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1.1rem;
+}
+
+.chat-input-container {
+    padding: 1.5rem;
+    background-color: var(--bg-color);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chat-form {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    background-color: var(--card-bg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 0.75rem;
+}
+
+textarea {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 1rem;
+    resize: none;
+    max-height: 200px;
+    padding: 0.5rem;
+    padding-right: 3rem;
+}
+
+textarea:focus {
+    outline: none;
+}
+
+.send-button {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    padding: 0.5rem;
+    cursor: pointer;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.send-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.send-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.loading {
+    display: none;
+    text-align: center;
+    margin: 1rem auto;
+    max-width: 800px;
+}
+
+.response-area {
+    max-width: 800px;
+    margin: 1rem auto;
+    padding: 1rem;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.disclaimer {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
+    max-width: 800px;
+    margin: 0.5rem auto;
+}
+
+@media (max-width: 768px) {
+    .chat-messages {
+        padding: 1rem;
+    }
+    
+    .welcome-message {
+        padding: 1rem;
+    }
+    
+    .chat-input-container {
+        padding: 1rem;
+    }
+}
+
+.upload-section {
+    max-width: 800px;
+    margin: 0 auto 1rem;
+}
+
+.upload-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background-color: var(--card-bg);
+    border: 2px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.upload-label:hover {
+    border-color: var(--primary-color);
+    background-color: rgba(76, 175, 80, 0.1);
+}
+
+.upload-label i {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+.file-input {
+    display: none;
+}
+
+.file-info {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
+.analysis-result {
+    color: var(--text-color);
+}
+
+.analysis-section {
+    margin-bottom: 1.5rem;
+}
+
+.analysis-section h3 {
+    color: var(--primary-color);
+    margin-bottom: 0.75rem;
+    font-size: 1.2rem;
+}
+
+.analysis-section ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.analysis-section li {
+    margin-bottom: 0.75rem;
+    padding: 0.75rem;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+.analysis-section li strong {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: var(--primary-color);
+}
+
+.error-message {
+    color: #ff6b6b;
+    padding: 1rem;
+    background-color: rgba(255, 107, 107, 0.1);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.error-message h3 {
+    margin-bottom: 0.5rem;
+}
+
+.raw-response {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    white-space: pre-wrap;
+    font-family: monospace;
+    font-size: 0.9rem;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Contract analyzer page loaded');
+    
+    const form = document.getElementById('contractForm');
+    const contractInput = document.getElementById('contract');
+    const pdfUpload = document.getElementById('pdfUpload');
+    const fileInfo = document.getElementById('fileInfo');
+    const responseArea = document.getElementById('response');
+    const loadingIndicator = document.getElementById('loading');
+
+    function formatAnalysisResponse(data) {
+        if (data.error) {
+            return `<div class="error-message">
+                <h3>Error</h3>
+                <p>${data.error}</p>
+                ${data.raw_response ? `<pre class="raw-response">${data.raw_response}</pre>` : ''}
+            </div>`;
+        }
+
+        let html = '<div class="analysis-result">';
+        
+        // Key Clauses
+        if (data.key_clauses && data.key_clauses.length > 0) {
+            html += `
+                <div class="analysis-section">
+                    <h3>Key Clauses</h3>
+                    <ul>
+                        ${data.key_clauses.map(clause => `
+                            <li>
+                                <strong>${clause.name}</strong>
+                                <p>${clause.purpose}</p>
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
+        // Potential Risks
+        if (data.potential_risks && data.potential_risks.length > 0) {
+            html += `
+                <div class="analysis-section">
+                    <h3>Potential Risks</h3>
+                    <ul>
+                        ${data.potential_risks.map(risk => `
+                            <li>${risk}</li>
+                        `).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
+        // Summary
+        if (data.summary) {
+            html += `
+                <div class="analysis-section">
+                    <h3>Summary</h3>
+                    <p>${data.summary}</p>
+                </div>
+            `;
+        }
+
+        html += '</div>';
+        return html;
+    }
+
+    // Handle PDF upload
+    pdfUpload.addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (file.type !== 'application/pdf') {
+            alert('Please upload a PDF file');
+            return;
+        }
+
+        fileInfo.textContent = `Selected file: ${file.name}`;
+        
+        try {
+            console.log('Uploading PDF file');
+            loadingIndicator.style.display = 'block';
+            responseArea.innerHTML = '';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await fetch('/analyze-contract-pdf', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Received analysis:', data);
+            
+            // Display the formatted response
+            responseArea.innerHTML = formatAnalysisResponse(data);
+            
+            // Clear the file input
+            pdfUpload.value = '';
+            fileInfo.textContent = '';
+        } catch (error) {
+            console.error('Error:', error);
+            responseArea.innerHTML = `<div class="error-message">
+                <h3>Error</h3>
+                <p>${error.message}</p>
+            </div>`;
+        } finally {
+            loadingIndicator.style.display = 'none';
+        }
+    });
+
+    // Handle text input
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        console.log('Form submitted');
+        
+        const contract = contractInput.value.trim();
+        console.log('Contract text:', contract);
+        
+        if (!contract) {
+            console.log('Empty contract, showing alert');
+            alert('Please enter contract text or upload a PDF file');
+            return;
+        }
+
+        try {
+            console.log('Showing loading indicator');
+            loadingIndicator.style.display = 'block';
+            responseArea.innerHTML = '';
+
+            console.log('Making API call to /analyze-contract');
+            const response = await fetch('/analyze-contract', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ contract_text: contract })
+            });
+
+            console.log('Response status:', response.status);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Received data:', data);
+            
+            // Display the formatted response
+            responseArea.innerHTML = formatAnalysisResponse(data);
+            console.log('Response displayed');
+            
+            // Clear the input
+            contractInput.value = '';
+        } catch (error) {
+            console.error('Error occurred:', error);
+            responseArea.innerHTML = `<div class="error-message">
+                <h3>Error</h3>
+                <p>${error.message}</p>
+            </div>`;
+        } finally {
+            console.log('Hiding loading indicator');
+            loadingIndicator.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %} 

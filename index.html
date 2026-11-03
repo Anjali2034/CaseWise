@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LegalEdge AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="static/css/style.css">
+    <style>
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .loading {
+            display: none;
+        }
+        .loading.active {
+            display: flex;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">LegalEdge AI</h1>
+            <p class="text-gray-600">Legal Document Automation Powered by AI</p>
+        </header>
+
+        <!-- Tabs -->
+        <div class="bg-white rounded-lg shadow-lg mb-8">
+            <div class="flex border-b">
+                <button class="tab-btn px-6 py-3 text-gray-600 hover:text-blue-500 border-b-2 border-transparent hover:border-blue-500" data-tab="generate">
+                    <i class="fas fa-file-alt mr-2"></i>Generate Document
+                </button>
+                <button class="tab-btn px-6 py-3 text-gray-600 hover:text-blue-500 border-b-2 border-transparent hover:border-blue-500" data-tab="analyze">
+                    <i class="fas fa-search mr-2"></i>Analyze Contract
+                </button>
+                <button class="tab-btn px-6 py-3 text-gray-600 hover:text-blue-500 border-b-2 border-transparent hover:border-blue-500" data-tab="assistant">
+                    <i class="fas fa-robot mr-2"></i>Legal Assistant
+                </button>
+                <button class="tab-btn px-6 py-3 text-gray-600 hover:text-blue-500 border-b-2 border-transparent hover:border-blue-500" data-tab="compliance">
+                    <i class="fas fa-check-circle mr-2"></i>Check Compliance
+                </button>
+                <button class="tab-btn px-6 py-3 text-gray-600 hover:text-blue-500 border-b-2 border-transparent hover:border-blue-500" data-tab="simplify">
+                    <i class="fas fa-language mr-2"></i>Simplify Document
+                </button>
+            </div>
+        </div>
+
+        <!-- Tab Contents -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <!-- Generate Document Tab -->
+            <div id="generate" class="tab-content active">
+                <h2 class="text-2xl font-semibold mb-4">Generate Legal Document</h2>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Enter your requirements:</label>
+                    <textarea id="generate-prompt" class="w-full p-2 border rounded-lg" rows="4" placeholder="Describe the type of legal document you need..."></textarea>
+                </div>
+                <button onclick="generateDocument()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Generate Document
+                </button>
+                <div id="generate-result" class="mt-4 p-4 bg-gray-50 rounded-lg hidden"></div>
+            </div>
+
+            <!-- Analyze Contract Tab -->
+            <div id="analyze" class="tab-content">
+                <h2 class="text-2xl font-semibold mb-4">Analyze Contract</h2>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Paste your contract:</label>
+                    <textarea id="analyze-text" class="w-full p-2 border rounded-lg" rows="6" placeholder="Paste your contract text here..."></textarea>
+                </div>
+                <button onclick="analyzeContract()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Analyze Contract
+                </button>
+                <div id="analyze-result" class="mt-4 p-4 bg-gray-50 rounded-lg hidden"></div>
+            </div>
+
+            <!-- Legal Assistant Tab -->
+            <div id="assistant" class="tab-content">
+                <h2 class="text-2xl font-semibold mb-4">Legal Assistant</h2>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Ask your legal question:</label>
+                    <textarea id="assistant-question" class="w-full p-2 border rounded-lg" rows="4" placeholder="Type your legal question here..."></textarea>
+                </div>
+                <button onclick="askAssistant()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Get Answer
+                </button>
+                <div id="assistant-result" class="mt-4 p-4 bg-gray-50 rounded-lg hidden"></div>
+            </div>
+
+            <!-- Check Compliance Tab -->
+            <div id="compliance" class="tab-content">
+                <h2 class="text-2xl font-semibold mb-4">Check Compliance</h2>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Paste legal text to check:</label>
+                    <textarea id="compliance-text" class="w-full p-2 border rounded-lg" rows="6" placeholder="Paste legal text to check compliance..."></textarea>
+                </div>
+                <button onclick="checkCompliance()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Check Compliance
+                </button>
+                <div id="compliance-result" class="mt-4 p-4 bg-gray-50 rounded-lg hidden"></div>
+            </div>
+
+            <!-- Simplify Document Tab -->
+            <div id="simplify" class="tab-content">
+                <h2 class="text-2xl font-semibold mb-4">Simplify Document</h2>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Paste complex legal text:</label>
+                    <textarea id="simplify-text" class="w-full p-2 border rounded-lg" rows="6" placeholder="Paste complex legal text to simplify..."></textarea>
+                </div>
+                <button onclick="simplifyDocument()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Simplify Text
+                </button>
+                <div id="simplify-result" class="mt-4 p-4 bg-gray-50 rounded-lg hidden"></div>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loading" class="loading fixed inset-0 bg-black bg-opacity-50 items-center justify-center">
+            <div class="bg-white p-4 rounded-lg">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+                <p class="mt-2 text-gray-600">Processing...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active class from all tabs
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.classList.remove('border-blue-500', 'text-blue-500');
+                });
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+
+                // Add active class to clicked tab
+                button.classList.add('border-blue-500', 'text-blue-500');
+                document.getElementById(button.dataset.tab).classList.add('active');
+            });
+        });
+
+        // API calls
+        const API_BASE = 'http://localhost:8000';
+
+        async function callAPI(endpoint, data) {
+            try {
+                showLoading();
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                hideLoading();
+                return result;
+            } catch (error) {
+                hideLoading();
+                throw error;
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('loading').classList.add('active');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').classList.remove('active');
+        }
+
+        function displayResult(elementId, result) {
+            const element = document.getElementById(elementId);
+            element.textContent = typeof result === 'object' ? JSON.stringify(result, null, 2) : result;
+            element.classList.remove('hidden');
+        }
+
+        async function generateDocument() {
+            const prompt = document.getElementById('generate-prompt').value;
+            const result = await callAPI('/generate-document', { prompt });
+            displayResult('generate-result', result.response);
+        }
+
+        async function analyzeContract() {
+            const text = document.getElementById('analyze-text').value;
+            const result = await callAPI('/analyze-contract', { text });
+            displayResult('analyze-result', result);
+        }
+
+        async function askAssistant() {
+            const question = document.getElementById('assistant-question').value;
+            const result = await callAPI('/legal-assistant', { question });
+            displayResult('assistant-result', result.response);
+        }
+
+        async function checkCompliance() {
+            const text = document.getElementById('compliance-text').value;
+            const result = await callAPI('/check-compliance', { text });
+            displayResult('compliance-result', result);
+        }
+
+        async function simplifyDocument() {
+            const text = document.getElementById('simplify-text').value;
+            const result = await callAPI('/simplify-document', { text });
+            displayResult('simplify-result', result.simplified_text);
+        }
+    </script>
+</body>
+</html> 

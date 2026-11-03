@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}Document Generator - AutoDocuGen AI Suite{% endblock %}
+
+{% block content %}
+<section class="chat-container">
+    <div class="chat-main">
+        <div class="chat-messages">
+            <div class="welcome-message">
+                <h1>Document Generator</h1>
+                <p>Generate professional legal documents with AI assistance</p>
+            </div>
+        </div>
+
+        <div class="chat-input-container">
+            <form id="documentForm" class="chat-form">
+                <div class="input-wrapper">
+                    <textarea 
+                        id="prompt" 
+                        name="prompt" 
+                        placeholder="Describe the type of document you need, including key details and requirements..."
+                        rows="3"></textarea>
+                    <button type="submit" class="send-button">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M7 11L12 6L17 11M12 18V7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+            </form>
+            <div id="loading" class="loading"></div>
+            <div id="response" class="response-area"></div>
+            <div class="disclaimer">
+                The generated documents are for reference only. Always have them reviewed by a legal professional.
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.chat-container {
+    display: flex;
+    height: calc(100vh - 60px);
+    margin-top: 60px;
+    background-color: var(--bg-color);
+}
+
+.chat-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-color);
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem;
+}
+
+.welcome-message {
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.welcome-message h1 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: var(--text-color);
+}
+
+.welcome-message p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1.1rem;
+}
+
+.chat-input-container {
+    padding: 1.5rem;
+    background-color: var(--bg-color);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chat-form {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    background-color: var(--card-bg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 0.75rem;
+}
+
+textarea {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 1rem;
+    resize: none;
+    max-height: 200px;
+    padding: 0.5rem;
+    padding-right: 3rem;
+}
+
+textarea:focus {
+    outline: none;
+}
+
+.send-button {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    padding: 0.5rem;
+    cursor: pointer;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.send-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.send-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.loading {
+    display: none;
+    text-align: center;
+    margin: 1rem auto;
+    max-width: 800px;
+    padding: 1rem;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+}
+
+.loading::after {
+    content: "Generating document...";
+    color: var(--text-color);
+    display: block;
+    margin-top: 0.5rem;
+}
+
+.loading::before {
+    content: "";
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--primary-color);
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.response-area {
+    max-width: 800px;
+    margin: 1rem auto;
+    padding: 1rem;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.disclaimer {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
+    max-width: 800px;
+    margin: 0.5rem auto;
+}
+
+@media (max-width: 768px) {
+    .chat-messages {
+        padding: 1rem;
+    }
+    
+    .welcome-message {
+        padding: 1rem;
+    }
+    
+    .chat-input-container {
+        padding: 1rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Document generator page loaded');
+    
+    const form = document.getElementById('documentForm');
+    const promptInput = document.getElementById('prompt');
+    const responseArea = document.getElementById('response');
+    const loadingIndicator = document.getElementById('loading');
+
+    console.log('Form elements:', {
+        form: form,
+        promptInput: promptInput,
+        responseArea: responseArea,
+        loadingIndicator: loadingIndicator
+    });
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        console.log('Form submitted');
+        
+        const prompt = promptInput.value.trim();
+        console.log('Prompt:', prompt);
+        
+        if (!prompt) {
+            console.log('Empty prompt, showing alert');
+            alert('Please enter a prompt');
+            return;
+        }
+
+        try {
+            console.log('Showing loading indicator');
+            loadingIndicator.style.display = 'block';
+            responseArea.textContent = '';
+
+            console.log('Making API call to /generate-document');
+            const response = await fetch('/generate-document', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ prompt: prompt })
+            });
+
+            console.log('Response status:', response.status);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Received data:', data);
+            
+            // Display the response
+            responseArea.textContent = data.response;
+            console.log('Response displayed');
+            
+            // Clear the input
+            promptInput.value = '';
+        } catch (error) {
+            console.error('Error occurred:', error);
+            responseArea.textContent = 'Error: ' + error.message;
+        } finally {
+            console.log('Hiding loading indicator');
+            loadingIndicator.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %} 

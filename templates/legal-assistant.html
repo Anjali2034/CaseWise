@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+
+{% block title %}Legal Assistant - AutoDocuGen AI Suite{% endblock %}
+
+{% block content %}
+<section class="chat-container">
+    <div class="chat-sidebar">
+        <div class="new-chat">
+            <button id="newChatBtn" class="new-chat-btn">
+                <span class="plus-icon">+</span> New Chat
+            </button>
+        </div>
+        <div class="chat-history">
+            <!-- Chat history will be populated here -->
+        </div>
+    </div>
+
+    <div class="chat-main">
+        <div class="chat-messages" id="chatMessages">
+            <div class="welcome-message">
+                <h1>Legal Assistant</h1>
+                <p>Ask me any legal questions, and I'll help you understand the law better.</p>
+            </div>
+        </div>
+
+        <div class="chat-input-container">
+            <form id="legalQuestionForm" class="chat-form">
+                <div class="input-wrapper">
+                    <textarea 
+                        id="question" 
+                        name="question" 
+                        placeholder="Type your legal question here..."
+                        rows="1"
+                        autofocus></textarea>
+                    <button type="submit" class="send-button">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M7 11L12 6L17 11M12 18V7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+            </form>
+            <div class="disclaimer">
+                AutoDocuGen AI Suite may produce inaccurate information about people, places, or facts.
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.chat-container {
+    display: flex;
+    height: calc(100vh - 60px);
+    margin-top: 60px;
+    background-color: var(--bg-color);
+}
+
+.chat-sidebar {
+    width: 260px;
+    background-color: var(--card-bg);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+.new-chat {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.new-chat-btn {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.new-chat-btn:hover {
+    background-color: var(--accent-color);
+}
+
+.plus-icon {
+    font-size: 1.2rem;
+}
+
+.chat-history {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+}
+
+.chat-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-color);
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem;
+}
+
+.welcome-message {
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.welcome-message h1 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: var(--text-color);
+}
+
+.welcome-message p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1.1rem;
+}
+
+.message {
+    display: flex;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.message.user {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.message.assistant {
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+.message-content {
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.message-text {
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.chat-input-container {
+    padding: 1.5rem;
+    background-color: var(--bg-color);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chat-form {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    background-color: var(--card-bg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 0.75rem;
+}
+
+textarea {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 1rem;
+    resize: none;
+    max-height: 200px;
+    padding: 0.5rem;
+    padding-right: 3rem;
+}
+
+textarea:focus {
+    outline: none;
+}
+
+.send-button {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    padding: 0.5rem;
+    cursor: pointer;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.send-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.send-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.disclaimer {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .chat-sidebar {
+        display: none;
+    }
+    
+    .chat-messages {
+        padding: 1rem;
+    }
+    
+    .message {
+        padding: 1rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('legalQuestionForm');
+    const textarea = document.getElementById('question');
+    const chatMessages = document.getElementById('chatMessages');
+    const newChatBtn = document.getElementById('newChatBtn');
+
+    // Auto-resize textarea
+    textarea.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+    });
+
+    // Handle form submission
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const question = textarea.value.trim();
+        if (!question) return;
+
+        // Add user message
+        addMessage('user', question);
+        
+        // Clear input
+        textarea.value = '';
+        textarea.style.height = 'auto';
+        
+        // Show loading state
+        const loadingId = 'loading-' + Date.now();
+        addLoadingMessage(loadingId);
+        
+        try {
+            const response = await fetch('/legal-assistant', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ question }),
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(`Server error: ${response.status} - ${errorData.detail || response.statusText}`);
+            }
+            
+            const data = await response.json();
+            
+            // Remove loading message
+            removeLoadingMessage(loadingId);
+            
+            if (!data.response) {
+                throw new Error('No response received from server');
+            }
+            
+            // Add assistant message
+            addMessage('assistant', data.response);
+            
+        } catch (error) {
+            console.error('Error:', error);
+            removeLoadingMessage(loadingId);
+            addMessage('assistant', `Error: ${error.message}. Please try again or check if the Ollama server is running.`);
+        }
+        
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+
+    // New chat button
+    newChatBtn.addEventListener('click', function() {
+        // Remove all messages except welcome
+        const messages = chatMessages.querySelectorAll('.message');
+        messages.forEach(msg => msg.remove());
+    });
+
+    function addMessage(role, content) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${role}`;
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+        
+        const textDiv = document.createElement('div');
+        textDiv.className = 'message-text';
+        textDiv.textContent = content;
+        
+        contentDiv.appendChild(textDiv);
+        messageDiv.appendChild(contentDiv);
+        
+        // Insert before the input container
+        chatMessages.appendChild(messageDiv);
+    }
+
+    function addLoadingMessage(id) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message assistant';
+        messageDiv.id = id;
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+        
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'loading';
+        
+        contentDiv.appendChild(loadingDiv);
+        messageDiv.appendChild(contentDiv);
+        
+        chatMessages.appendChild(messageDiv);
+    }
+
+    function removeLoadingMessage(id) {
+        const loadingMessage = document.getElementById(id);
+        if (loadingMessage) {
+            loadingMessage.remove();
+        }
+    }
+});
+</script>
+{% endblock %} 
