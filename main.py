@@ -86,6 +86,21 @@ def handle_ollama_error(e: Exception) -> HTTPException:
             detail=f"Error processing request: {error_msg}"
         )
 
+def extract_pdf_text(file: UploadFile) -> str:
+    """Read an uploaded PDF and return its text. Raises HTTP 400 for bad input."""
+    try:
+        reader = PyPDF2.PdfReader(io.BytesIO(file.file.read()))
+        text = "".join((page.extract_text() or "") for page in reader.pages)
+    except Exception as e:
+        logger.warning(f"Could not read uploaded PDF {file.filename!r}: {e}")
+        raise HTTPException(status_code=400, detail="The uploaded file is not a valid PDF")
+    if not text.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Could not extract text from the PDF file. Scanned (image-only) PDFs are not supported yet."
+        )
+    return text
+
 @app.get("/health")
 def health():
     """Liveness + dependency check. Always 200 while the web app is up."""
@@ -123,6 +138,8 @@ def legal_assistant(question: Question):
         logger.info(f"Processing legal assistant request: {question.question}")
         response = ollama_client.legal_assistant(question.question)
         return {"response": response}
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error in legal_assistant endpoint: {str(e)}")
         raise handle_ollama_error(e)
@@ -134,6 +151,8 @@ def generate_document(request: DocumentRequest):
         response = ollama_client.generate_document(request.prompt)
         logger.info(f"Successfully generated document of length: {len(response)}")
         return {"response": response}
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error in generate_document endpoint: {str(e)}")
         logger.error(f"Stack trace: {traceback.format_exc()}")
@@ -145,6 +164,8 @@ def analyze_contract(request: ContractRequest):
         logger.info("Processing contract analysis request")
         response = ollama_client.analyze_contract(request.contract_text)
         return response
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error in analyze_contract endpoint: {str(e)}")
         raise handle_ollama_error(e)
@@ -155,6 +176,8 @@ def check_compliance(request: ComplianceRequest):
         logger.info("Processing compliance check request")
         response = ollama_client.check_compliance(request.legal_text)
         return response
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error in check_compliance endpoint: {str(e)}")
         raise handle_ollama_error(e)
@@ -177,6 +200,8 @@ def simplify_document(request: SimplificationRequest):
             )
             
         return {"response": response}
+    except HTTPException:
+        raise
     except ValueError as e:
         logger.error(f"Validation error in simplify_document endpoint: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
@@ -190,102 +215,54 @@ def simplify_document_pdf(file: UploadFile = File(...)):
     try:
         logger.info(f"Received PDF file for simplification: {file.filename}")
         
-        # Read the PDF file
-        contents = file.file.read()
-        pdf_file = io.BytesIO(contents)
-        
-        # Extract text from PDF
-        pdf_reader = PyPDF2.PdfReader(pdf_file)
-        text = ""
-        for page in pdf_reader.pages:
-            text += page.extract_text()
-        
-        if not text.strip():
-            raise HTTPException(
-                status_code=400,
-                detail="Could not extract text from the PDF file"
-            )
+        text = extract_pdf_text(file)
         
         # Simplify the extracted text
         logger.info("Simplifying extracted text from PDF")
         response = ollama_client.simplify_document(text)
         return {"response": response}
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error processing PDF: {str(e)}")
-        logger.error(f"Stack trace: {traceback.format_exc()}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error processing PDF: {str(e)}"
-        )
+        raise handle_ollama_error(e)
 
 @app.post("/analyze-contract-pdf")
 def analyze_contract_pdf(file: UploadFile = File(...)):
     try:
         logger.info(f"Received PDF file: {file.filename}")
         
-        # Read the PDF file
-        contents = file.file.read()
-        pdf_file = io.BytesIO(contents)
-        
-        # Extract text from PDF
-        pdf_reader = PyPDF2.PdfReader(pdf_file)
-        text = ""
-        for page in pdf_reader.pages:
-            text += page.extract_text()
-        
-        if not text.strip():
-            raise HTTPException(
-                status_code=400,
-                detail="Could not extract text from the PDF file"
-            )
+        text = extract_pdf_text(file)
         
         # Analyze the extracted text
         logger.info("Analyzing extracted text from PDF")
         response = ollama_client.analyze_contract(text)
         return response
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error processing PDF: {str(e)}")
-        logger.error(f"Stack trace: {traceback.format_exc()}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error processing PDF: {str(e)}"
-        )
+        raise handle_ollama_error(e)
 
 @app.post("/check-compliance-pdf")
 def check_compliance_pdf(file: UploadFile = File(...)):
     try:
         logger.info(f"Received PDF file for compliance check: {file.filename}")
         
-        # Read the PDF file
-        contents = file.file.read()
-        pdf_file = io.BytesIO(contents)
-        
-        # Extract text from PDF
-        pdf_reader = PyPDF2.PdfReader(pdf_file)
-        text = ""
-        for page in pdf_reader.pages:
-            text += page.extract_text()
-        
-        if not text.strip():
-            raise HTTPException(
-                status_code=400,
-                detail="Could not extract text from the PDF file"
-            )
+        text = extract_pdf_text(file)
         
         # Check compliance of the extracted text
         logger.info("Checking compliance of extracted text from PDF")
         response = ollama_client.check_compliance(text)
         return response
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error processing PDF: {str(e)}")
-        logger.error(f"Stack trace: {traceback.format_exc()}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error processing PDF: {str(e)}"
-        )
+        raise handle_ollama_error(e)
 
 if __name__ == "__main__":
     import uvicorn

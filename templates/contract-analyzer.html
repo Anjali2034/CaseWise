@@ -373,7 +373,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw await errorFromResponse(response);
             }
 
             const data = await response.json();
@@ -427,7 +427,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Response status:', response.status);
             
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw await errorFromResponse(response);
             }
 
             const data = await response.json();

@@ -71,6 +71,17 @@
                 .replace(/'/g, '&#39;');
         }
 
+        // Build an Error from a failed fetch response, using the server's
+        // `detail` message when there is one (FastAPI's HTTPException format).
+        async function errorFromResponse(response) {
+            let detail = '';
+            try {
+                const data = await response.json();
+                if (typeof data.detail === 'string') detail = data.detail;
+            } catch (e) { /* body was not JSON */ }
+            return new Error(detail || `Request failed (status ${response.status})`);
+        }
+
         // Mobile menu toggle
         const mobileMenuButton = document.querySelector('.mobile-menu-button');
         const mobileMenu = document.querySelector('.mobile-menu');
