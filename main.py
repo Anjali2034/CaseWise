@@ -30,8 +30,13 @@ logger = logging.getLogger(__name__)
 # Load settings from a local .env file if present (see .env.example)
 load_dotenv()
 
+def parse_origins(raw: str) -> list:
+    """'https://a.com/, http://localhost:3000' -> ['https://a.com', 'http://localhost:3000']"""
+    return [o.strip().rstrip("/") for o in raw.split(",") if o.strip()]
+
+
 # Get environment variables
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+ALLOWED_ORIGINS = parse_origins(os.getenv("ALLOWED_ORIGINS", ""))
 OLLAMA_API_BASE = os.getenv("OLLAMA_API_BASE", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama2")
 
@@ -43,14 +48,24 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Set up templates
 templates = Jinja2Templates(directory="templates")
 
-# Enable CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+def cors_settings(origins: list) -> dict:
+    """CORS options for the given allowed origins.
+
+    The app's own pages are same-origin and need no CORS, so with no origins
+    configured the middleware is not installed at all. Credentials (cookies)
+    are only ever allowed for an explicit list of origins, never with "*".
+    """
+    return {
+        "allow_origins": origins,
+        "allow_credentials": "*" not in origins,
+        "allow_methods": ["GET", "POST"],
+        "allow_headers": ["Content-Type"],
+    }
+
+
+# Enable CORS only when other origins are explicitly allowed (see .env.example)
+if ALLOWED_ORIGINS:
+    app.add_middleware(CORSMiddleware, **cors_settings(ALLOWED_ORIGINS))
 
 # Initialize Ollama client. The app starts even if Ollama is down;
 # requests will return 503 until it is reachable. See /health.

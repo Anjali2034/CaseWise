@@ -18,6 +18,10 @@ os.chdir(ROOT)  # the app mounts "static" and "templates" relative to the cwd
 # Must be set before `main` is imported. Port 9 is closed, so Ollama is "down".
 os.environ["OLLAMA_API_BASE"] = "http://127.0.0.1:9"
 os.environ["OLLAMA_MODEL"] = "llama2"
+# Pin the rest too, so a developer's local .env can't change test results.
+os.environ["ALLOWED_ORIGINS"] = ""
+os.environ["MAX_TEXT_CHARS"] = "50000"
+os.environ["MAX_PDF_MB"] = "10"
 
 import main  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
