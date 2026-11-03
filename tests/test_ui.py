@@ -6,6 +6,24 @@ import pytest
 
 STYLES = Path("static/css/styles.css").read_text(encoding="utf-8")
 
+# ---------- global CSS must not override page components (fix #15) ----------
+
+def test_no_global_rules_that_restyle_every_textarea_or_submit_button():
+    """These made the send button a 180px block and the chat textarea 150px tall."""
+    assert 'button[type="submit"]' not in STYLES
+    for block in re.findall(r"(?:^|\n)textarea[^{]*\{([^}]*)\}", STYLES):
+        assert not re.search(r"\b(width|min-height|height|border|background|padding)\s*:", block), block
+
+
+@pytest.mark.parametrize("unused", [".container", ".card", ".form-group", ".instructions", ".error {", ".hero"])
+def test_leftover_rules_from_the_deleted_page_are_gone(unused):
+    assert unused not in STYLES
+
+
+def test_chat_input_shows_keyboard_focus():
+    assert re.search(r"\.input-wrapper:focus-within \{[^}]*border-color", STYLES)
+
+
 # ---------- loading indicator (fix #14) ----------
 
 LOADING_PAGES = {
