@@ -28,7 +28,7 @@
                     </button>
                 </div>
             </form>
-            <div id="loading" class="loading"></div>
+            <div id="loading" class="loading" data-label="Generating document..." role="status" aria-live="polite"></div>
             <div id="response" class="response-area"></div>
             {{ disclaimer("Generated documents are drafts and must be reviewed before you use or sign them.") }}
         </div>
@@ -133,40 +133,6 @@ textarea:focus {
 .send-button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-}
-
-.loading {
-    display: none;
-    text-align: center;
-    margin: 1rem auto;
-    max-width: 800px;
-    padding: 1rem;
-    background-color: var(--card-bg);
-    border-radius: 12px;
-}
-
-.loading::after {
-    content: "Generating document...";
-    color: var(--text-color);
-    display: block;
-    margin-top: 0.5rem;
-}
-
-.loading::before {
-    content: "";
-    display: inline-block;
-    width: 24px;
-    height: 24px;
-    border: 3px solid var(--primary-color);
-    border-radius: 50%;
-    border-top-color: transparent;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
 }
 
 .response-area {

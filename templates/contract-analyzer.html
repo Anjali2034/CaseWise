@@ -36,7 +36,7 @@
                     </button>
                 </div>
             </form>
-            <div id="loading" class="loading"></div>
+            <div id="loading" class="loading" data-label="Analyzing contract..." role="status" aria-live="polite"></div>
             <div id="response" class="response-area"></div>
             {{ disclaimer("The analysis may miss risks or misread clauses.") }}
         </div>
@@ -141,13 +141,6 @@ textarea:focus {
 .send-button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-}
-
-.loading {
-    display: none;
-    text-align: center;
-    margin: 1rem auto;
-    max-width: 800px;
 }
 
 .response-area {

@@ -134,35 +134,7 @@ button[type="submit"]:hover {
     transform: translateY(-1px);
 }
 
-/* Loading and response areas */
-.loading {
-    display: none;
-    position: relative;
-    padding: 15px;
-    text-align: center;
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 6px;
-    margin: 15px auto;
-    width: 100%;
-    max-width: 150px;
-}
-
-.loading::after {
-    content: '';
-    display: inline-block;
-    width: 25px;
-    height: 25px;
-    border: 3px solid #f3f3f3;
-    border-top: 3px solid #3498db;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
+/* Response areas */
 .response-area {
     width: 100%;
     max-width: 500px;
@@ -267,4 +239,47 @@ button[type="submit"]:hover {
 /* Add margin-top to main content to account for fixed navbar */
 main {
     margin-top: 60px;
-} 
+}
+
+/* Loading indicator, shared by every tool page.
+   Usage: <div class="loading" data-label="Analyzing contract..." role="status" aria-live="polite"></div>
+   Pages show it by setting style.display = 'block'. */
+.loading {
+    display: none;
+    text-align: center;
+    margin: 1rem auto;
+    max-width: 800px;
+    padding: 1rem;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    color: var(--text-color);
+}
+
+.loading::before {
+    content: "";
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--primary-color);
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: loading-spin 1s linear infinite;
+}
+
+.loading::after {
+    content: attr(data-label);
+    display: block;
+    margin-top: 0.5rem;
+}
+
+@keyframes loading-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .loading::before {
+        animation-duration: 3s;
+    }
+}
