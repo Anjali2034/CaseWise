@@ -214,8 +214,6 @@ document.addEventListener('DOMContentLoaded', function() {
             documentText.textContent = data.response;
             responseArea.replaceChildren(documentText);
             
-            // Clear the input
-            promptInput.value = '';
         } catch (error) {
             console.error('Error occurred:', error);
             responseArea.textContent = 'Error: ' + error.message;

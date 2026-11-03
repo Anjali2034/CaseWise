@@ -280,8 +280,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(`Server error: ${response.status} - ${errorData.detail || response.statusText}`);
+                throw await errorFromResponse(response);
             }
             
             const data = await response.json();
@@ -299,7 +298,9 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Error:', error);
             removeLoadingMessage(loadingId);
-            addMessage('assistant', `Error: ${error.message}. Please try again or check if the Ollama server is running.`);
+            addMessage('assistant', `Error: ${error.message}`);
+            // Give the question back so it can be retried without retyping it
+            if (!textarea.value) textarea.value = question;
         }
         
         // Scroll to bottom

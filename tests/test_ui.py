@@ -106,6 +106,31 @@ def test_upload_box_looks_disabled_while_busy():
     assert re.search(r'\.chat-input-container\[aria-busy="true"\] \.upload-label \{[^}]*pointer-events: none', STYLES)
 
 
+# ---------- keep the user's text (fix #21) ----------
+
+@pytest.mark.parametrize("template, var", [("compliance-checker.html", "documentInput"),
+                                           ("contract-analyzer.html", "contractInput"),
+                                           ("document-generator.html", "promptInput"),
+                                           ("document-simplifier.html", "documentInput")])
+def test_tool_pages_keep_the_text_after_a_run(template, var):
+    js = (Path("templates") / template).read_text(encoding="utf-8")
+    assert f"{var}.value = ''" not in js
+
+
+def test_legal_assistant_gives_the_question_back_after_an_error():
+    js = Path("templates/legal-assistant.html").read_text(encoding="utf-8")
+    catch_block = js.split("} catch (error) {", 1)[1].split("\n        }\n", 1)[0]
+    assert "textarea.value = question" in catch_block
+
+
+@pytest.mark.parametrize("template", ["legal-assistant.html", "document-generator.html", "contract-analyzer.html",
+                                      "compliance-checker.html", "document-simplifier.html"])
+def test_every_page_shows_the_servers_own_error_message(template):
+    js = (Path("templates") / template).read_text(encoding="utf-8")
+    assert "throw await errorFromResponse(response)" in js
+    assert "Server error:" not in js and "HTTP error!" not in js
+
+
 # ---------- global CSS must not override page components (fix #15) ----------
 
 def test_no_global_rules_that_restyle_every_textarea_or_submit_button():

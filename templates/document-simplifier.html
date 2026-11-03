@@ -314,8 +314,6 @@ document.addEventListener('DOMContentLoaded', function() {
             // Display the response
             responseArea.innerHTML = `<div class="simplified-text plain-text">${escapeHtml(data.response)}</div>`;
             
-            // Clear the input
-            documentInput.value = '';
         } catch (error) {
             console.error('Error:', error);
             responseArea.innerHTML = `<div class="error-message">
