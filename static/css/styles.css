@@ -28,6 +28,9 @@ button {
 
 /* Response areas */
 .response-area {
+    /* Count padding and border inside the 100% width; without this the box
+       sticks out past the right edge of a phone screen (sideways scrolling). */
+    box-sizing: border-box;
     width: 100%;
     max-width: 500px;
     margin: 15px auto;

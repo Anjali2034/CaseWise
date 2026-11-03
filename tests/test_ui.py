@@ -32,6 +32,15 @@ def test_no_links_to_account_pages_that_do_not_exist(client, page):
     assert "/login" not in html and "/register" not in html
 
 
+# ---------- no sideways scrolling on phones (fix #17) ----------
+
+def test_response_area_counts_padding_inside_its_width():
+    """width:100% + padding + border made the box 18px wider than a 375px phone screen."""
+    block = re.search(r"\.response-area \{([^}]*)\}", STYLES).group(1)
+    assert "width: 100%" in block
+    assert "box-sizing: border-box" in block
+
+
 # ---------- global CSS must not override page components (fix #15) ----------
 
 def test_no_global_rules_that_restyle_every_textarea_or_submit_button():
