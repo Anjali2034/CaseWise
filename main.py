@@ -40,7 +40,7 @@ ALLOWED_ORIGINS = parse_origins(os.getenv("ALLOWED_ORIGINS", ""))
 OLLAMA_API_BASE = os.getenv("OLLAMA_API_BASE", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama2")
 
-app = FastAPI(title="LegalEdge AI")
+app = FastAPI(title="CaseWise")
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
