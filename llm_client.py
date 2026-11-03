@@ -6,6 +6,8 @@ import logging
 import traceback
 import re
 
+import prompts
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -128,8 +130,7 @@ class OllamaClient:
     def generate_document(self, prompt: str) -> str:
         """Generate a legal document based on the prompt."""
         logger.info(f"Starting document generation ({len(prompt)} chars)")
-        system_prompt = """You are a legal document generator. Generate a professional legal document based on the user's requirements. 
-        Include all necessary clauses and sections. Format the output in a clear, structured manner."""
+        system_prompt = prompts.DOCUMENT_GENERATOR
         
         full_response = ""
         try:
@@ -149,20 +150,7 @@ class OllamaClient:
 
     def analyze_contract(self, contract_text: str) -> Dict[str, Any]:
         """Analyze a contract and extract key information."""
-        system_prompt = """You are a legal contract analyzer. Analyze the provided contract and provide a response in the following JSON format:
-        {
-            "key_clauses": [
-                {
-                    "name": "clause name",
-                    "purpose": "clause purpose"
-                }
-            ],
-            "potential_risks": [
-                "risk description"
-            ],
-            "summary": "brief summary of the contract's main points"
-        }
-        Ensure your response is valid JSON and follows this exact structure."""
+        system_prompt = prompts.CONTRACT_ANALYZER
         
         prompt = f"Analyze this contract and provide the analysis in the specified JSON format:\n\n{contract_text}"
         # Connection/model errors propagate to the endpoint (-> 503/500).
@@ -187,10 +175,9 @@ class OllamaClient:
         raise LLMResponseFormatError("Contract analysis returned an unexpected format")
 
     def legal_assistant(self, question: str) -> str:
-        """Provide legal advice or answer legal questions."""
+        """Answer a legal question with general information (not legal advice)."""
         logger.info("Processing legal assistant request")
-        system_prompt = """You are a legal assistant. Provide clear, accurate, and helpful responses to legal questions. 
-        Keep responses concise and practical. Focus on the most relevant legal principles and implications."""
+        system_prompt = prompts.LEGAL_ASSISTANT
         
         full_response = ""
         try:
@@ -204,20 +191,7 @@ class OllamaClient:
 
     def check_compliance(self, legal_text: str) -> Dict[str, Any]:
         """Check legal text for compliance and required clauses."""
-        system_prompt = """You are a legal compliance checker. Analyze the provided legal text and provide a response in the following JSON format:
-        {
-            "missing_clauses": [
-                "list of missing required clauses"
-            ],
-            "compliance_issues": [
-                "list of potential compliance issues"
-            ],
-            "recommendations": [
-                "list of recommended additions or changes"
-            ],
-            "summary": "brief summary of compliance status"
-        }
-        IMPORTANT: Your response MUST be a valid JSON object. Do not include any text before or after the JSON object. Do not use markdown formatting or bullet points."""
+        system_prompt = prompts.COMPLIANCE_CHECKER
         
         prompt = f"Check compliance for this legal text and provide the analysis in the specified JSON format:\n\n{legal_text}"
         # Connection/model errors propagate to the endpoint (-> 503/500).
@@ -281,8 +255,7 @@ class OllamaClient:
             if not legal_text or not legal_text.strip():
                 raise ValueError("Legal text cannot be empty")
                 
-            system_prompt = """You are a legal document simplifier. Convert complex legal text into clear, plain English while maintaining the original meaning and intent. 
-            Use simple language and structure the output in an easy-to-understand format."""
+            system_prompt = prompts.DOCUMENT_SIMPLIFIER
             
             prompt = f"Simplify this legal text:\n\n{legal_text}"
             

@@ -1,0 +1,8 @@
+{# Shared "not legal advice" notice for every tool page.
+   Usage: {% from "partials/disclaimer.html" import disclaimer %}
+          {{ disclaimer("One sentence about this tool's specific limits.") }} #}
+{% macro disclaimer(note) -%}
+<div class="disclaimer" role="note">
+    <strong>Not legal advice.</strong> {{ note }} AI can make mistakes, so have a qualified lawyer review anything important.
+</div>
+{%- endmacro %}

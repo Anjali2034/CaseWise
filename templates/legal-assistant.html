@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/disclaimer.html" import disclaimer %}
 
 {% block title %}Legal Assistant - AutoDocuGen AI Suite{% endblock %}
 
@@ -39,9 +40,7 @@
                     </button>
                 </div>
             </form>
-            <div class="disclaimer">
-                AutoDocuGen AI Suite may produce inaccurate information about people, places, or facts.
-            </div>
+            {{ disclaimer("Answers are general information and may not apply to your situation or jurisdiction.") }}
         </div>
     </div>
 </section>

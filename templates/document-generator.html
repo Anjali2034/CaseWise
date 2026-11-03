@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/disclaimer.html" import disclaimer %}
 
 {% block title %}Document Generator - AutoDocuGen AI Suite{% endblock %}
 
@@ -29,9 +30,7 @@
             </form>
             <div id="loading" class="loading"></div>
             <div id="response" class="response-area"></div>
-            <div class="disclaimer">
-                The generated documents are for reference only. Always have them reviewed by a legal professional.
-            </div>
+            {{ disclaimer("Generated documents are drafts and must be reviewed before you use or sign them.") }}
         </div>
     </div>
 </section>

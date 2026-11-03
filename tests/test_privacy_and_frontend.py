@@ -8,7 +8,7 @@ import pytest
 
 from conftest import make_text_pdf
 
-TEMPLATES = sorted(Path("templates").glob("*.html"))
+TEMPLATES = sorted(Path("templates").rglob("*.html"))
 MARKER = "SECRETCLIENTNAME"
 
 

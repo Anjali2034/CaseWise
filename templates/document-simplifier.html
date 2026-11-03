@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/disclaimer.html" import disclaimer %}
 
 {% block title %}Document Simplifier - AutoDocuGen AI Suite{% endblock %}
 
@@ -43,9 +44,7 @@
             </form>
             <div id="loading" class="loading"></div>
             <div id="response" class="response-area"></div>
-            <div class="disclaimer">
-                The simplified version is for reference only. Always consult with a legal professional for final decisions.
-            </div>
+            {{ disclaimer("The simplified text may leave out details that matter legally.") }}
         </div>
     </div>
 </section>
