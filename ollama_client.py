@@ -10,6 +10,11 @@ import re
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+class LLMResponseFormatError(Exception):
+    """The model replied, but not in the structure we asked for (e.g. invalid JSON)."""
+
+
 class OllamaClient:
     def __init__(self, base_url="http://localhost:11434"):
         self.base_url = base_url
@@ -146,41 +151,26 @@ class OllamaClient:
         Ensure your response is valid JSON and follows this exact structure."""
         
         prompt = f"Analyze this contract and provide the analysis in the specified JSON format:\n\n{contract_text}"
+        # Connection/model errors propagate to the endpoint (-> 503/500).
         full_response = ""
+        for chunk in self._generate_stream(prompt, system_prompt):
+            full_response += chunk
+
+        # Try to parse the response as JSON
         try:
-            for chunk in self._generate_stream(prompt, system_prompt):
-                full_response += chunk
-            
-            # Try to parse the response as JSON
-            try:
-                return json.loads(full_response)
-            except json.JSONDecodeError:
-                # If parsing fails, try to extract JSON from the response
-                # Look for content between curly braces
-                json_match = re.search(r'\{.*\}', full_response, re.DOTALL)
-                if json_match:
-                    try:
-                        return json.loads(json_match.group())
-                    except json.JSONDecodeError:
-                        pass
-                
-                # If all parsing attempts fail, return a structured error response
-                return {
-                    "error": "Failed to parse LLM response as JSON",
-                    "raw_response": full_response,
-                    "key_clauses": [],
-                    "potential_risks": [],
-                    "summary": "Unable to analyze the contract due to formatting issues."
-                }
-        except Exception as e:
-            logger.error(f"Error in analyze_contract: {str(e)}")
-            logger.error(f"Stack trace: {traceback.format_exc()}")
-            return {
-                "error": f"Error analyzing contract: {str(e)}",
-                "key_clauses": [],
-                "potential_risks": [],
-                "summary": "An error occurred while analyzing the contract."
-            }
+            return json.loads(full_response)
+        except json.JSONDecodeError:
+            # If parsing fails, try to extract JSON from the response
+            # Look for content between curly braces
+            json_match = re.search(r'\{.*\}', full_response, re.DOTALL)
+            if json_match:
+                try:
+                    return json.loads(json_match.group())
+                except json.JSONDecodeError:
+                    pass
+
+        logger.error(f"analyze_contract: model output was not valid JSON ({len(full_response)} chars)")
+        raise LLMResponseFormatError("Contract analysis returned an unexpected format")
 
     def legal_assistant(self, question: str) -> str:
         """Provide legal advice or answer legal questions."""
@@ -216,77 +206,59 @@ class OllamaClient:
         IMPORTANT: Your response MUST be a valid JSON object. Do not include any text before or after the JSON object. Do not use markdown formatting or bullet points."""
         
         prompt = f"Check compliance for this legal text and provide the analysis in the specified JSON format:\n\n{legal_text}"
+        # Connection/model errors propagate to the endpoint (-> 503/500).
         full_response = ""
+        for chunk in self._generate_stream(prompt, system_prompt):
+            full_response += chunk
+
+        # Try to parse the response as JSON
         try:
-            for chunk in self._generate_stream(prompt, system_prompt):
-                full_response += chunk
-            
-            # Try to parse the response as JSON
-            try:
-                return json.loads(full_response)
-            except json.JSONDecodeError:
-                # If parsing fails, try to extract JSON from the response
-                json_match = re.search(r'\{.*\}', full_response, re.DOTALL)
-                if json_match:
-                    try:
-                        return json.loads(json_match.group())
-                    except json.JSONDecodeError:
-                        pass
-                
-                # If all parsing attempts fail, parse the text response into structured data
+            return json.loads(full_response)
+        except json.JSONDecodeError:
+            # If parsing fails, try to extract JSON from the response
+            json_match = re.search(r'\{.*\}', full_response, re.DOTALL)
+            if json_match:
                 try:
-                    # Split the response into sections
-                    sections = full_response.split('\n\n')
-                    result = {
-                        "missing_clauses": [],
-                        "compliance_issues": [],
-                        "recommendations": [],
-                        "summary": ""
-                    }
-                    
-                    current_section = None
-                    for section in sections:
-                        if "Missing Clauses:" in section:
-                            current_section = "missing_clauses"
-                            continue
-                        elif "Potential Compliance Issues:" in section:
-                            current_section = "compliance_issues"
-                            continue
-                        elif "Recommendations:" in section:
-                            current_section = "recommendations"
-                            continue
-                        elif "Summary:" in section:
-                            current_section = "summary"
-                            continue
-                        
-                        if current_section == "summary":
-                            result["summary"] = section.strip()
-                        elif current_section and section.strip():
-                            # Remove bullet points and clean up the text
-                            cleaned_text = section.replace('*', '').strip()
-                            if cleaned_text:
-                                result[current_section].append(cleaned_text)
-                    
-                    return result
-                except Exception as e:
-                    logger.error(f"Error parsing text response: {str(e)}")
-                    return {
-                        "error": "Failed to parse response",
-                        "raw_response": full_response,
-                        "missing_clauses": [],
-                        "compliance_issues": [],
-                        "recommendations": [],
-                        "summary": "Unable to analyze the document due to formatting issues."
-                    }
-        except Exception as e:
-            logger.error(f"Error in check_compliance: {str(e)}")
-            return {
-                "error": f"Error checking compliance: {str(e)}",
-                "missing_clauses": [],
-                "compliance_issues": [],
-                "recommendations": [],
-                "summary": "An error occurred while analyzing the document."
-            }
+                    return json.loads(json_match.group())
+                except json.JSONDecodeError:
+                    pass
+
+        # If all parsing attempts fail, parse the text response into structured data
+        sections = full_response.split('\n\n')
+        result = {
+            "missing_clauses": [],
+            "compliance_issues": [],
+            "recommendations": [],
+            "summary": ""
+        }
+
+        current_section = None
+        for section in sections:
+            if "Missing Clauses:" in section:
+                current_section = "missing_clauses"
+                continue
+            elif "Potential Compliance Issues:" in section:
+                current_section = "compliance_issues"
+                continue
+            elif "Recommendations:" in section:
+                current_section = "recommendations"
+                continue
+            elif "Summary:" in section:
+                current_section = "summary"
+                continue
+
+            if current_section == "summary":
+                result["summary"] = section.strip()
+            elif current_section and section.strip():
+                # Remove bullet points and clean up the text
+                cleaned_text = section.replace('*', '').strip()
+                if cleaned_text:
+                    result[current_section].append(cleaned_text)
+
+        if not any(result.values()):
+            logger.error(f"check_compliance: could not parse model output ({len(full_response)} chars)")
+            raise LLMResponseFormatError("Compliance check returned an unexpected format")
+        return result
 
     def simplify_document(self, legal_text: str) -> str:
         """Convert complex legal text into plain English."""

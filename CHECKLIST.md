@@ -27,7 +27,8 @@ Tracks every fix and feature. Each item is done in its own commit.
 - [x] Stop blocking the server: make LLM endpoints non-blocking (`def` endpoints or async HTTP client)
 - [x] Don't crash on startup when Ollama is unreachable; add a `/health` endpoint
 - [x] Fix 400 errors being returned as 500 (empty text, unreadable PDF); pages now show the server's error message
-- [ ] Return proper HTTP errors from contract analysis and compliance check (no 200 responses with an `error` field)
+- [x] Return proper HTTP errors from contract analysis and compliance check (no 200 responses with an `error` field)
+- [ ] Remove the now-unused `if (data.error)` branches in the contract-analyzer and compliance-checker templates
 - [ ] Fix retry logic: no duplicated text after a partial stream, no retrying 4xx errors, fail fast when Ollama is down (currently ~10s before the 503)
 - [ ] Make the model name configurable (env var) and make the error messages match it
 - [ ] Stop logging full documents, prompts and streamed chunks; remove `console.log` of user text
@@ -102,4 +103,5 @@ Tracks every fix and feature. Each item is done in its own commit.
 | 2 | Fix XSS: shared `escapeHtml()` in base.html, used on every `innerHTML` insert | `ce1dc65` |
 | 3 | Non-blocking LLM endpoints (`async def` → `def`); a page load during a slow LLM call went from 2.54s to 0.03s | `2508918` |
 | 4 | App starts without Ollama; `GET /health` endpoint; connection failures return 503 instead of a raw 500 | `6582157` |
-| 5 | 400s no longer become 500s; shared `extract_pdf_text()` (invalid PDF returns 400); PDF endpoints return 503 when Ollama is down; pages show the server's error message | _(your commit)_ |
+| 5 | 400s no longer become 500s; shared `extract_pdf_text()` (invalid PDF returns 400); PDF endpoints return 503 when Ollama is down; pages show the server's error message | `9d54add` |
+| 6 | Analysis and compliance stop returning 200 on failure: Ollama down returns 503, unparseable model output returns 502 (`LLMResponseFormatError`) | _(your commit)_ |

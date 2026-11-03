@@ -5,7 +5,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
-from ollama_client import OllamaClient
+from ollama_client import OllamaClient, LLMResponseFormatError
 import traceback
 import logging
 import os
@@ -68,7 +68,12 @@ def handle_ollama_error(e: Exception) -> HTTPException:
     """Convert Ollama errors to appropriate HTTP exceptions."""
     error_msg = str(e)
     logger.error(f"Handling Ollama error: {error_msg}")
-    
+
+    if isinstance(e, LLMResponseFormatError):
+        return HTTPException(
+            status_code=502,
+            detail="The AI returned its answer in an unexpected format. Please try again."
+        )
     if "Could not connect to Ollama server" in error_msg:
         return HTTPException(
             status_code=503,
