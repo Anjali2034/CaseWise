@@ -16,9 +16,9 @@
         <div class="chat-input-container">
             <form id="documentForm" class="chat-form">
                 <div class="input-wrapper">
-                    <textarea 
-                        id="prompt" 
-                        name="prompt" 
+                    <textarea
+                        id="prompt"
+                        name="prompt"
                         placeholder="Describe the type of document you need, including key details and requirements..."
                         rows="3"></textarea>
                     <button type="submit" class="send-button">
@@ -39,7 +39,7 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    
+
     const form = document.getElementById('documentForm');
     const promptInput = document.getElementById('prompt');
     const responseArea = document.getElementById('response');
@@ -48,9 +48,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     form.addEventListener('submit', whileBusy(async function(e) {
         e.preventDefault();
-        
+
         const prompt = promptInput.value.trim();
-        
+
         if (!prompt) {
             alert('Please enter a prompt');
             return;
@@ -58,36 +58,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             loadingIndicator.style.display = 'block';
-            responseArea.textContent = '';
-
-            const response = await fetch('/generate-document', {
+            responseArea.replaceChildren();
+            await streamInto(responseArea, '/generate-document/stream', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ prompt: prompt })
-            });
-
-            
-            if (!response.ok) {
-                throw await errorFromResponse(response);
-            }
-
-            const data = await response.json();
-            
-            // Display the response
-            const documentText = document.createElement('div');
-            documentText.className = 'plain-text';
-            documentText.textContent = data.response;
-            responseArea.replaceChildren(documentText);
-            
+            }, { onFirstText: () => { loadingIndicator.style.display = 'none'; } });
         } catch (error) {
             console.error('Error occurred:', error);
-            responseArea.textContent = 'Error: ' + error.message;
+            showError(responseArea, error.message);
         } finally {
             loadingIndicator.style.display = 'none';
         }
     }));
 });
 </script>
-{% endblock %} 
+{% endblock %}

@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, StringConstraints
 from typing import Annotated
 from llm_client import (
@@ -22,6 +22,7 @@ from rate_limit import RateLimiter, client_key
 from dotenv import load_dotenv
 import traceback
 import logging
+import json
 import uuid
 import os
 from pypdf import PdfReader
@@ -278,7 +279,67 @@ def run_tool(name: str, task, text: str):
     return result
 
 
-# ---------- Text endpoints ----------
+def stream_tool(name: str, task, text: str) -> StreamingResponse:
+    """Run a text tool and send its answer to the browser as it's written.
+
+    The first piece of the answer is fetched before replying, so failures that happen
+    before any text exists (bad key, quota, too long...) still get a proper HTTP status.
+    After that the body is newline-delimited JSON:
+        {"text": "..."}  one per piece of the answer
+        {"done": true}   at the end, or
+        {"error": "..."} if the AI fails part-way (the status is already 200 by then)
+    """
+    try:
+        pieces = task(text)
+        first = next(pieces, None)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"{name} failed: {type(e).__name__}")
+        raise handle_llm_error(e)
+    if not first:
+        raise HTTPException(status_code=502, detail="The AI returned an empty answer. Please try again.")
+
+    def events():
+        yield json.dumps({"text": first}) + "\n"
+        try:
+            for piece in pieces:
+                yield json.dumps({"text": piece}) + "\n"
+        except Exception as e:
+            logger.error(f"{name} failed part-way: {type(e).__name__}")
+            yield json.dumps({"error": handle_llm_error(e).detail}) + "\n"
+            return
+        yield json.dumps({"done": True}) + "\n"
+
+    # no-cache / no buffering, so proxies pass each piece on immediately
+    return StreamingResponse(events(), media_type="application/x-ndjson",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+# ---------- Streaming endpoints (used by the pages) ----------
+
+@app.post("/legal-assistant/stream", dependencies=[Depends(ai_rate_limit)])
+def legal_assistant_stream(question: Question):
+    logger.info(f"Legal assistant (stream) request received ({len(question.question)} chars)")
+    return stream_tool("Legal assistant", llm.legal_assistant_stream, question.question)
+
+@app.post("/generate-document/stream", dependencies=[Depends(ai_rate_limit)])
+def generate_document_stream(request: DocumentRequest):
+    logger.info(f"Document generation (stream) request received ({len(request.prompt)} chars)")
+    return stream_tool("Document generation", llm.generate_document_stream, request.prompt)
+
+@app.post("/simplify-document/stream", dependencies=[Depends(ai_rate_limit)])
+def simplify_document_stream(request: SimplificationRequest):
+    logger.info("Simplification (stream) request received")
+    return stream_tool("Simplification", llm.simplify_document_stream, request.legal_text)
+
+@app.post("/simplify-document-pdf/stream", dependencies=[Depends(ai_rate_limit)])
+def simplify_document_pdf_stream(file: UploadFile = File(...)):
+    logger.info("PDF received for simplification (stream)")
+    return stream_tool("Simplification (PDF)", llm.simplify_document_stream, extract_pdf_text(file))
+
+
+# ---------- Text endpoints (whole answer at once; for API use) ----------
 
 @app.post("/legal-assistant", dependencies=[Depends(ai_rate_limit)])
 def legal_assistant(question: Question):

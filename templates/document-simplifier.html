@@ -20,9 +20,9 @@
 
             <form id="simplifierForm" class="chat-form">
                 <div class="input-wrapper">
-                    <textarea 
-                        id="document" 
-                        name="document" 
+                    <textarea
+                        id="document"
+                        name="document"
                         placeholder="Or paste your legal text here for simplification..."
                         rows="3"></textarea>
                     <button type="submit" class="send-button">
@@ -61,37 +61,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         fileInfo.textContent = `Selected file: ${file.name}`;
-        
+
         try {
             loadingIndicator.style.display = 'block';
-            responseArea.innerHTML = '';
+            responseArea.replaceChildren();
 
             const formData = new FormData();
             formData.append('file', file);
-
-            const response = await fetch('/simplify-document-pdf', {
+            await streamInto(responseArea, '/simplify-document-pdf/stream', {
                 method: 'POST',
                 body: formData
-            });
+            }, { onFirstText: () => { loadingIndicator.style.display = 'none'; } });
 
-            if (!response.ok) {
-                throw await errorFromResponse(response);
-            }
-
-            const data = await response.json();
-            
-            // Display the response
-            responseArea.innerHTML = `<div class="simplified-text plain-text">${escapeHtml(data.response)}</div>`;
-            
             // Clear the file input
             pdfUpload.value = '';
             fileInfo.textContent = '';
         } catch (error) {
             console.error('Error:', error);
-            responseArea.innerHTML = `<div class="error-message">
-                <h3>Error</h3>
-                <p>${escapeHtml(error.message)}</p>
-            </div>`;
+            showError(responseArea, error.message);
         } finally {
             loadingIndicator.style.display = 'none';
         }
@@ -100,9 +87,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle text input
     form.addEventListener('submit', whileBusy(async function(e) {
         e.preventDefault();
-        
+
         const legalText = documentInput.value.trim();
-        
+
         if (!legalText) {
             alert('Please enter legal text or upload a PDF file');
             return;
@@ -110,31 +97,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             loadingIndicator.style.display = 'block';
-            responseArea.innerHTML = '';
+            responseArea.replaceChildren();
 
-            const response = await fetch('/simplify-document', {
+            await streamInto(responseArea, '/simplify-document/stream', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ legal_text: legalText })
-            });
+            }, { onFirstText: () => { loadingIndicator.style.display = 'none'; } });
 
-            if (!response.ok) {
-                throw await errorFromResponse(response);
-            }
-
-            const data = await response.json();
-            
-            // Display the response
-            responseArea.innerHTML = `<div class="simplified-text plain-text">${escapeHtml(data.response)}</div>`;
-            
         } catch (error) {
             console.error('Error:', error);
-            responseArea.innerHTML = `<div class="error-message">
-                <h3>Error</h3>
-                <p>${escapeHtml(error.message)}</p>
-            </div>`;
+            showError(responseArea, error.message);
         } finally {
             loadingIndicator.style.display = 'none';
         }
@@ -142,4 +115,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
- 

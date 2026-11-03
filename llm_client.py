@@ -82,8 +82,11 @@ class LLMClient:
 
     # -- provider-specific parts --
 
-    def _request(self, prompt: str, system_prompt: str) -> Tuple[str, Dict[str, Any], Dict[str, str]]:
-        """Return (url, json_body, headers) for a streaming generation request."""
+    def _request(self, prompt: str, system_prompt: str, json_mode: bool = False) -> Tuple[str, Dict[str, Any], Dict[str, str]]:
+        """Return (url, json_body, headers) for a streaming generation request.
+
+        json_mode asks the provider to guarantee the answer is a valid JSON object.
+        """
         raise NotImplementedError
 
     def _parse_line(self, line: bytes) -> Tuple[Optional[str], bool]:
@@ -122,14 +125,14 @@ class LLMClient:
         self._health_cache = (now, result)
         return result
 
-    def _generate_stream(self, prompt: str, system_prompt: Optional[str] = None):
+    def _generate_stream(self, prompt: str, system_prompt: Optional[str] = None, json_mode: bool = False):
         """Stream text chunks from the model.
 
         Retry policy: only transient failures (connection errors, 5xx) are retried,
         only once, and only before any text has been yielded, so partial output is
         never duplicated. Timeouts and 4xx errors fail immediately.
         """
-        url, body, headers = self._request(prompt, system_prompt)
+        url, body, headers = self._request(prompt, system_prompt, json_mode)
         attempt = 0
         yielded_any = False
 
@@ -173,32 +176,43 @@ class LLMClient:
                 logger.error(f"{self.provider} stream failed: {e}")
                 raise LLMError(f"{self.provider} stream failed: {e}") from e
 
-    def _complete(self, prompt: str, system_prompt: str) -> str:
+    def _complete(self, prompt: str, system_prompt: str, json_mode: bool = False) -> str:
         """Run the model and return its whole answer as one string ("" if it said nothing).
 
         Errors propagate as LLMError subclasses; main.run_tool turns them, and empty
         answers, into the right HTTP response.
         """
-        return "".join(self._generate_stream(prompt, system_prompt))
+        return "".join(self._generate_stream(prompt, system_prompt, json_mode=json_mode))
 
     # -- the five CaseWise tools --
+    # The three text tools come in two forms: one returns the whole answer, the
+    # *_stream one yields it piece by piece as the model writes it.
+
+    def legal_assistant_stream(self, question: str):
+        """Answer a legal question with general information (not legal advice)."""
+        return self._generate_stream(question, prompts.LEGAL_ASSISTANT)
+
+    def generate_document_stream(self, prompt: str):
+        """Draft a legal document based on the user's description."""
+        return self._generate_stream(prompt, prompts.DOCUMENT_GENERATOR)
+
+    def simplify_document_stream(self, legal_text: str):
+        """Rewrite legal text in plain English."""
+        return self._generate_stream(f"Simplify this legal text:\n\n{legal_text}", prompts.DOCUMENT_SIMPLIFIER)
 
     def legal_assistant(self, question: str) -> str:
-        """Answer a legal question with general information (not legal advice)."""
-        return self._complete(question, prompts.LEGAL_ASSISTANT)
+        return "".join(self.legal_assistant_stream(question))
 
     def generate_document(self, prompt: str) -> str:
-        """Generate a legal document based on the prompt."""
-        return self._complete(prompt, prompts.DOCUMENT_GENERATOR)
+        return "".join(self.generate_document_stream(prompt))
 
     def simplify_document(self, legal_text: str) -> str:
-        """Convert complex legal text into plain English."""
-        return self._complete(f"Simplify this legal text:\n\n{legal_text}", prompts.DOCUMENT_SIMPLIFIER)
+        return "".join(self.simplify_document_stream(legal_text))
 
     def analyze_contract(self, contract_text: str) -> Dict[str, Any]:
         """Analyze a contract and extract key information."""
         prompt = f"Analyze this contract and provide the analysis in the specified JSON format:\n\n{contract_text}"
-        full_response = self._complete(prompt, prompts.CONTRACT_ANALYZER)
+        full_response = self._complete(prompt, prompts.CONTRACT_ANALYZER, json_mode=True)
         parsed = _parse_json_object(full_response)
         if parsed is not None:
             return parsed
@@ -208,7 +222,7 @@ class LLMClient:
     def check_compliance(self, legal_text: str) -> Dict[str, Any]:
         """Check legal text for compliance and required clauses."""
         prompt = f"Check compliance for this legal text and provide the analysis in the specified JSON format:\n\n{legal_text}"
-        full_response = self._complete(prompt, prompts.COMPLIANCE_CHECKER)
+        full_response = self._complete(prompt, prompts.COMPLIANCE_CHECKER, json_mode=True)
         parsed = _parse_json_object(full_response)
         if parsed is not None:
             return parsed
@@ -273,9 +287,11 @@ class OllamaClient(LLMClient):
         super().__init__(model)
         self.base_url = base_url
 
-    def _request(self, prompt, system_prompt):
+    def _request(self, prompt, system_prompt, json_mode=False):
         body = {"model": self.model, "prompt": prompt, "system": system_prompt, "stream": True,
                 "options": {"temperature": self.temperature}}
+        if json_mode:
+            body["format"] = "json"
         return f"{self.base_url}/api/generate", body, {}
 
     def _parse_line(self, line):
@@ -328,10 +344,12 @@ class GroqClient(LLMClient):
     def _headers(self):
         return {"Authorization": f"Bearer {self.api_key}"}
 
-    def _request(self, prompt, system_prompt):
+    def _request(self, prompt, system_prompt, json_mode=False):
         messages = ([{"role": "system", "content": system_prompt}] if system_prompt else []) + \
                    [{"role": "user", "content": prompt}]
         body = {"model": self.model, "messages": messages, "stream": True, "temperature": self.temperature}
+        if json_mode:
+            body["response_format"] = {"type": "json_object"}
         return f"{self.base_url}/chat/completions", body, self._headers()
 
     def _parse_line(self, line):

@@ -117,7 +117,8 @@ The pages call these endpoints, and you can call them directly too. Interactive 
 | `POST` | `/check-compliance` | `{"legal_text": "..."}` | `{"missing_clauses": [...], "compliance_issues": [...], "recommendations": [...], "summary": "..."}` |
 | `POST` | `/simplify-document` | `{"legal_text": "..."}` | `{"response": "..."}` |
 | `POST` | `/analyze-contract-pdf`, `/check-compliance-pdf`, `/simplify-document-pdf` | A PDF as `file` (multipart form) | Same as the text version |
-| `GET` | `/health` | — | Whether Ollama is reachable and the model is installed |
+| `POST` | `/legal-assistant/stream`, `/generate-document/stream`, `/simplify-document/stream`, `/simplify-document-pdf/stream` | Same as above | The answer as it's written: one JSON object per line, `{"text": "..."}`, then `{"done": true}` (or `{"error": "..."}` if the AI fails part-way). Errors before the first words get a normal status code. The pages use these |
+| `GET` | `/health` | — | Whether the AI service is reachable and the model is available |
 
 Errors return `{"detail": "a readable message"}` with a meaningful status code:
 
@@ -139,6 +140,7 @@ llm_client.py           Talks to the AI (Ollama or Groq): streaming, retries, pa
 rate_limit.py           Per-visitor limits on the AI tools
 prompts.py              The instructions sent to the AI for each tool, with shared safety rules
 templates/              HTML pages (Jinja2)
+static/vendor/          marked (Markdown) and DOMPurify (sanitising), kept in the repo with their licences
   base.html             Shared layout, navbar and JavaScript helpers
   partials/             Reusable pieces: "not legal advice" notice, PDF upload box
 static/css/styles.css   All shared styles

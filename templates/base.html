@@ -42,7 +42,95 @@
         {% block content %}{% endblock %}
     </main>
 
+    <!-- Markdown rendering for AI answers (copies kept in the repo, see static/vendor/) -->
+    <script src="{{ url_for('static', path='vendor/marked-18.1.1.umd.js') }}"></script>
+    <script src="{{ url_for('static', path='vendor/purify-3.4.17.min.js') }}"></script>
     <script>
+        // Turn the AI's Markdown answer into safe HTML. marked converts Markdown to HTML;
+        // DOMPurify then removes anything that could run code (scripts, event handlers,
+        // javascript: links). AI output is untrusted, so it must ALWAYS go through this.
+        DOMPurify.addHook('afterSanitizeAttributes', function (node) {
+            if (node.tagName === 'A') {
+                node.setAttribute('target', '_blank');
+                node.setAttribute('rel', 'noopener noreferrer');
+            }
+        });
+        // Answers never need inline styles or form controls; forbidding them stops an
+        // answer from restyling the page or showing a fake "enter your password" box.
+        const MARKDOWN_SANITIZE = {
+            FORBID_ATTR: ['style'],
+            FORBID_TAGS: ['form', 'input', 'button', 'textarea', 'select', 'option', 'style'],
+        };
+        function renderMarkdown(text) {
+            return DOMPurify.sanitize(marked.parse(text, { gfm: true, breaks: true }), MARKDOWN_SANITIZE);
+        }
+
+        // Show an error in a result area. Built with textContent, so it can't inject HTML.
+        function showError(area, message) {
+            const box = document.createElement('div');
+            box.className = 'error-message';
+            box.setAttribute('role', 'alert');
+            const title = document.createElement('h3');
+            title.textContent = 'Error';
+            const text = document.createElement('p');
+            text.textContent = message;
+            box.append(title, text);
+            area.replaceChildren(box);
+        }
+
+        // POST to a /stream endpoint and show the answer in `area` as it's written.
+        // The server sends one JSON object per line: {"text"}, then {"done"} or {"error"}.
+        // hooks.onFirstText(): called once, when the first words arrive (hide the spinner)
+        // hooks.onUpdate():    called after each redraw (e.g. keep a chat scrolled down)
+        // Returns the full answer as raw Markdown (also kept in output.dataset.raw).
+        async function streamInto(area, url, options, hooks = {}) {
+            const response = await fetch(url, options);
+            if (!response.ok) throw await errorFromResponse(response);
+
+            const output = document.createElement('div');
+            output.className = 'markdown';
+            let text = '';
+            let frame = null;
+            const draw = () => {
+                frame = null;
+                output.innerHTML = renderMarkdown(text);
+                if (hooks.onUpdate) hooks.onUpdate();
+            };
+            const handle = (line) => {
+                if (!line.trim()) return;
+                const event = JSON.parse(line);
+                if (event.error) throw new Error(event.error);
+                if (!event.text) return;
+                if (!text) {
+                    area.replaceChildren(output);
+                    if (hooks.onFirstText) hooks.onFirstText();
+                }
+                text += event.text;
+                // Redraw at most once per screen frame, however fast the text arrives
+                if (!frame) frame = requestAnimationFrame(draw);
+            };
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            try {
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop();
+                    lines.forEach(handle);
+                }
+                handle(buffer + decoder.decode());
+            } finally {
+                if (frame) cancelAnimationFrame(frame);
+                if (text) draw();          // final, complete render
+            }
+            output.dataset.raw = text;
+            return text;
+        }
+
         // Escape text before inserting it into HTML via innerHTML.
         // LLM output and error messages must ALWAYS go through this to prevent XSS.
         function escapeHtml(value) {

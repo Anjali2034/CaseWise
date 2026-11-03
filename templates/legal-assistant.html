@@ -27,9 +27,9 @@
         <div class="chat-input-container">
             <form id="legalQuestionForm" class="chat-form">
                 <div class="input-wrapper">
-                    <textarea 
-                        id="question" 
-                        name="question" 
+                    <textarea
+                        id="question"
+                        name="question"
                         placeholder="Type your legal question here..."
                         rows="1"
                         autofocus></textarea>
@@ -121,7 +121,7 @@
     .chat-sidebar {
         display: none;
     }
-    
+
     .message {
         padding: 1rem;
     }
@@ -146,55 +146,46 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle form submission
     form.addEventListener('submit', whileBusy(async function(e) {
         e.preventDefault();
-        
+
         const question = textarea.value.trim();
         if (!question) return;
 
         // Add user message
         addMessage('user', question);
-        
+
         // Clear input
         textarea.value = '';
         textarea.style.height = 'auto';
-        
+
         // Show loading state
         const loadingId = 'loading-' + Date.now();
         addLoadingMessage(loadingId);
         chatMessages.scrollTop = chatMessages.scrollHeight;  // keep the "Thinking..." bubble in view
-        
+
+        // The answer bubble stays hidden until the first words arrive
+        const answer = addMessage('assistant', '');
+        const answerBubble = answer.closest('.message');
+        answerBubble.hidden = true;
+        const scrollToBottom = () => { chatMessages.scrollTop = chatMessages.scrollHeight; };
+
         try {
-            const response = await fetch('/legal-assistant', {
+            await streamInto(answer, '/legal-assistant/stream', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ question }),
+            }, {
+                onFirstText: () => { removeLoadingMessage(loadingId); answerBubble.hidden = false; },
+                onUpdate: scrollToBottom,
             });
-            
-            if (!response.ok) {
-                throw await errorFromResponse(response);
-            }
-            
-            const data = await response.json();
-            
-            // Remove loading message
-            removeLoadingMessage(loadingId);
-            
-            if (!data.response) {
-                throw new Error('No response received from server');
-            }
-            
-            // Add assistant message
-            addMessage('assistant', data.response);
-            
         } catch (error) {
             console.error('Error:', error);
             removeLoadingMessage(loadingId);
+            if (!answer.textContent) answerBubble.remove();
             addMessage('assistant', `Error: ${error.message}`);
             // Give the question back so it can be retried without retyping it
             if (!textarea.value) textarea.value = question;
         }
-        
+
         // Scroll to bottom
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }));
@@ -209,38 +200,38 @@ document.addEventListener('DOMContentLoaded', function() {
     function addMessage(role, content) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${role}`;
-        
+
         const contentDiv = document.createElement('div');
         contentDiv.className = 'message-content';
-        
+
         const textDiv = document.createElement('div');
         textDiv.className = 'message-text';
         textDiv.textContent = content;
-        
+
         contentDiv.appendChild(textDiv);
         messageDiv.appendChild(contentDiv);
-        
-        // Insert before the input container
+
         chatMessages.appendChild(messageDiv);
+        return textDiv;
     }
 
     function addLoadingMessage(id) {
         const messageDiv = document.createElement('div');
         messageDiv.className = 'message assistant';
         messageDiv.id = id;
-        
+
         const contentDiv = document.createElement('div');
         contentDiv.className = 'message-content';
-        
+
         const loadingDiv = document.createElement('div');
         loadingDiv.className = 'loading';
         loadingDiv.dataset.label = 'Thinking...';
         loadingDiv.setAttribute('role', 'status');
         loadingDiv.style.display = 'block';
-        
+
         contentDiv.appendChild(loadingDiv);
         messageDiv.appendChild(contentDiv);
-        
+
         chatMessages.appendChild(messageDiv);
     }
 
@@ -252,4 +243,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-{% endblock %} 
+{% endblock %}

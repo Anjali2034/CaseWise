@@ -18,6 +18,12 @@ body {
     line-height: 1.6;
 }
 
+/* The `hidden` attribute must always win: otherwise a rule like
+   `.message { display: flex }` would show an element the code meant to hide. */
+[hidden] {
+    display: none !important;
+}
+
 /* Form controls don't inherit the page font by default */
 textarea,
 button {
@@ -47,12 +53,76 @@ button {
     color: var(--text-color);
 }
 
-/* Plain-text answers (generated documents, simplified text): keep the model's
-   line breaks. Not on .response-area itself, because the HTML results built
-   from indented template strings would then show all that indentation. */
-.plain-text {
-    white-space: pre-wrap;
+/* AI answers rendered from Markdown (see renderMarkdown in base.html) */
+.markdown {
+    white-space: normal;
+    line-height: 1.65;
+    font-size: 0.95rem;
+    overflow-wrap: anywhere;
 }
+
+.markdown > :first-child { margin-top: 0; }
+.markdown > :last-child { margin-bottom: 0; }
+
+.markdown p { margin: 0.6em 0; }
+
+.markdown h1, .markdown h2, .markdown h3, .markdown h4 {
+    margin: 1.2em 0 0.5em;
+    line-height: 1.3;
+    color: var(--text-color);
+}
+.markdown h1 { font-size: 1.4rem; }
+.markdown h2 { font-size: 1.2rem; }
+.markdown h3, .markdown h4 { font-size: 1.05rem; }
+
+.markdown strong { color: #ffffff; font-weight: 600; }
+
+.markdown ul, .markdown ol { margin: 0.6em 0; padding-left: 1.5em; }
+.markdown li { margin: 0.25em 0; }
+.markdown li::marker { color: var(--primary-color); }
+
+.markdown a { color: var(--primary-color); }
+
+.markdown code {
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 0.88em;
+    background-color: rgba(255, 255, 255, 0.08);
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+}
+.markdown pre {
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 0.8em 1em;
+    border-radius: 8px;
+    overflow-x: auto;
+}
+.markdown pre code { background: none; padding: 0; }
+
+.markdown blockquote {
+    margin: 0.8em 0;
+    padding: 0.2em 1em;
+    border-left: 3px solid var(--primary-color);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.markdown hr { border: none; border-top: 1px solid var(--border-color); margin: 1.2em 0; }
+
+/* Models like to answer with tables; let wide ones scroll instead of overflowing */
+.markdown table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    margin: 0.8em 0;
+    font-size: 0.9em;
+}
+.markdown th, .markdown td {
+    border: 1px solid var(--border-color);
+    padding: 0.45em 0.7em;
+    text-align: left;
+    vertical-align: top;
+}
+.markdown th { background-color: rgba(255, 255, 255, 0.06); font-weight: 600; }
 
 /* PDF upload box, shared by every tool that accepts PDFs
    (markup: templates/partials/upload.html) */

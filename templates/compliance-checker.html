@@ -20,9 +20,9 @@
 
             <form id="complianceForm" class="chat-form">
                 <div class="input-wrapper">
-                    <textarea 
-                        id="document" 
-                        name="document" 
+                    <textarea
+                        id="document"
+                        name="document"
                         placeholder="Or paste your legal text here for compliance checking..."
                         rows="3"></textarea>
                     <button type="submit" class="send-button">
@@ -43,7 +43,7 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    
+
     const form = document.getElementById('complianceForm');
     const documentInput = document.getElementById('document');
     const pdfUpload = document.getElementById('pdfUpload');
@@ -62,10 +62,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         fileInfo.textContent = `Selected file: ${file.name}`;
-        
+
         try {
             loadingIndicator.style.display = 'block';
-            responseArea.innerHTML = '';
+            responseArea.replaceChildren();
 
             const formData = new FormData();
             formData.append('file', file);
@@ -80,19 +80,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const data = await response.json();
-            
+
             // Display the response
             responseArea.innerHTML = formatComplianceResponse(data);
-            
+
             // Clear the file input
             pdfUpload.value = '';
             fileInfo.textContent = '';
         } catch (error) {
             console.error('Error:', error);
-            responseArea.innerHTML = `<div class="error-message">
-                <h3>Error</h3>
-                <p>${escapeHtml(error.message)}</p>
-            </div>`;
+            showError(responseArea, error.message);
         } finally {
             loadingIndicator.style.display = 'none';
         }
@@ -101,9 +98,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle text input
     form.addEventListener('submit', whileBusy(async function(e) {
         e.preventDefault();
-        
+
         const legalText = documentInput.value.trim();
-        
+
         if (!legalText) {
             alert('Please enter legal text or upload a PDF file');
             return;
@@ -111,7 +108,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             loadingIndicator.style.display = 'block';
-            responseArea.innerHTML = '';
+            responseArea.replaceChildren();
 
             const response = await fetch('/check-compliance', {
                 method: 'POST',
@@ -121,22 +118,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify({ legal_text: legalText })
             });
 
-            
+
             if (!response.ok) {
                 throw await errorFromResponse(response);
             }
 
             const data = await response.json();
-            
+
             // Display the response
             responseArea.innerHTML = formatComplianceResponse(data);
-            
+
         } catch (error) {
             console.error('Error occurred:', error);
-            responseArea.innerHTML = `<div class="error-message">
-                <h3>Error</h3>
-                <p>${escapeHtml(error.message)}</p>
-            </div>`;
+            showError(responseArea, error.message);
         } finally {
             loadingIndicator.style.display = 'none';
         }
@@ -144,7 +138,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function formatComplianceResponse(data) {
         let html = '<div class="result">';
-        
+
         // Missing Clauses
         if (data.missing_clauses && data.missing_clauses.length > 0) {
             html += `
@@ -202,4 +196,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-{% endblock %} 
+{% endblock %}

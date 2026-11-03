@@ -71,13 +71,16 @@ def test_result_container_does_not_preserve_whitespace(source):
     assert "white-space" not in css_rule(Path(source).read_text(encoding="utf-8"), ".response-area")
 
 
-def test_plain_text_answers_keep_their_line_breaks():
-    assert "white-space: pre-wrap" in css_rule(STYLES, ".plain-text")
-    simplifier = Path("templates/document-simplifier.html").read_text(encoding="utf-8")
-    assert simplifier.count('class="simplified-text plain-text"') == 2  # text upload and PDF upload
-    generator = Path("templates/document-generator.html").read_text(encoding="utf-8")
-    assert "documentText.className = 'plain-text'" in generator
-    assert "documentText.textContent = data.response" in generator  # still textContent: no XSS
+def test_text_answers_are_streamed_and_formatted():
+    """The 3 text tools stream into a .markdown container that keeps the model's formatting."""
+    assert "white-space: normal" in css_rule(STYLES, ".markdown")
+    assert ".plain-text" not in STYLES
+    for template, endpoints in [("document-generator.html", ["/generate-document/stream"]),
+                                ("document-simplifier.html", ["/simplify-document/stream", "/simplify-document-pdf/stream"]),
+                                ("legal-assistant.html", ["/legal-assistant/stream"])]:
+        js = (Path("templates") / template).read_text(encoding="utf-8")
+        for endpoint in endpoints:
+            assert f"streamInto(" in js and f"'{endpoint}'" in js, (template, endpoint)
 
 
 # ---------- one request at a time (fix #20) ----------
@@ -127,7 +130,9 @@ def test_legal_assistant_gives_the_question_back_after_an_error():
                                       "compliance-checker.html", "document-simplifier.html"])
 def test_every_page_shows_the_servers_own_error_message(template):
     js = (Path("templates") / template).read_text(encoding="utf-8")
-    assert "throw await errorFromResponse(response)" in js
+    # either directly, or through streamInto(), which does it for the streaming tools
+    assert "throw await errorFromResponse(response)" in js or "streamInto(" in js
+    assert "throw await errorFromResponse(response)" in BASE.split("async function streamInto", 1)[1]
     assert "Server error:" not in js and "HTTP error!" not in js
 
 

@@ -204,14 +204,18 @@ def test_empty_model_answer_is_502_on_every_text_tool(client, llm_reply, endpoin
 
 
 def test_all_endpoints_share_one_error_handler():
-    """Every API endpoint goes through run_tool(), so error handling can't drift apart again."""
+    """Every API endpoint goes through run_tool() or stream_tool(), so error handling can't drift apart."""
     import inspect
-    source = inspect.getsource(main)
     for name in ["legal_assistant", "generate_document", "analyze_contract", "check_compliance",
                  "simplify_document", "simplify_document_pdf", "analyze_contract_pdf", "check_compliance_pdf"]:
         body = inspect.getsource(getattr(main, name))
         assert "run_tool(" in body and "try:" not in body, name
-    assert source.count("raise handle_llm_error(e)") == 1
+    for name in ["legal_assistant_stream", "generate_document_stream", "simplify_document_stream",
+                 "simplify_document_pdf_stream"]:
+        body = inspect.getsource(getattr(main, name))
+        assert "stream_tool(" in body and "try:" not in body, name
+    helpers = inspect.getsource(main.run_tool) + inspect.getsource(main.stream_tool)
+    assert inspect.getsource(main).count("raise handle_llm_error(e)") == helpers.count("raise handle_llm_error(e)") == 2
 
 
 # ---------- no internal details leak (fix #9) ----------

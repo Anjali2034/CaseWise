@@ -19,9 +19,9 @@
 
             <form id="contractForm" class="chat-form">
                 <div class="input-wrapper">
-                    <textarea 
-                        id="contract" 
-                        name="contract" 
+                    <textarea
+                        id="contract"
+                        name="contract"
                         placeholder="Or paste your contract or legal document here for analysis..."
                         rows="3"></textarea>
                     <button type="submit" class="send-button">
@@ -42,7 +42,7 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    
+
     const form = document.getElementById('contractForm');
     const contractInput = document.getElementById('contract');
     const pdfUpload = document.getElementById('pdfUpload');
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function formatAnalysisResponse(data) {
         let html = '<div class="result">';
-        
+
         // Key Clauses
         if (data.key_clauses && data.key_clauses.length > 0) {
             html += `
@@ -109,10 +109,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         fileInfo.textContent = `Selected file: ${file.name}`;
-        
+
         try {
             loadingIndicator.style.display = 'block';
-            responseArea.innerHTML = '';
+            responseArea.replaceChildren();
 
             const formData = new FormData();
             formData.append('file', file);
@@ -127,19 +127,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const data = await response.json();
-            
+
             // Display the formatted response
             responseArea.innerHTML = formatAnalysisResponse(data);
-            
+
             // Clear the file input
             pdfUpload.value = '';
             fileInfo.textContent = '';
         } catch (error) {
             console.error('Error:', error);
-            responseArea.innerHTML = `<div class="error-message">
-                <h3>Error</h3>
-                <p>${escapeHtml(error.message)}</p>
-            </div>`;
+            showError(responseArea, error.message);
         } finally {
             loadingIndicator.style.display = 'none';
         }
@@ -148,9 +145,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle text input
     form.addEventListener('submit', whileBusy(async function(e) {
         e.preventDefault();
-        
+
         const contract = contractInput.value.trim();
-        
+
         if (!contract) {
             alert('Please enter contract text or upload a PDF file');
             return;
@@ -158,7 +155,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             loadingIndicator.style.display = 'block';
-            responseArea.innerHTML = '';
+            responseArea.replaceChildren();
 
             const response = await fetch('/analyze-contract', {
                 method: 'POST',
@@ -168,26 +165,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify({ contract_text: contract })
             });
 
-            
+
             if (!response.ok) {
                 throw await errorFromResponse(response);
             }
 
             const data = await response.json();
-            
+
             // Display the formatted response
             responseArea.innerHTML = formatAnalysisResponse(data);
-            
+
         } catch (error) {
             console.error('Error occurred:', error);
-            responseArea.innerHTML = `<div class="error-message">
-                <h3>Error</h3>
-                <p>${escapeHtml(error.message)}</p>
-            </div>`;
+            showError(responseArea, error.message);
         } finally {
             loadingIndicator.style.display = 'none';
         }
     }));
 });
 </script>
-{% endblock %} 
+{% endblock %}
