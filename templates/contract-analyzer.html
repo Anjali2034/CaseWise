@@ -215,15 +215,6 @@ textarea:focus {
     margin-bottom: 0.5rem;
 }
 
-.raw-response {
-    margin-top: 1rem;
-    padding: 1rem;
-    background-color: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    white-space: pre-wrap;
-    font-family: monospace;
-    font-size: 0.9rem;
-}
 </style>
 {% endblock %}
 
@@ -239,14 +230,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const loadingIndicator = document.getElementById('loading');
 
     function formatAnalysisResponse(data) {
-        if (data.error) {
-            return `<div class="error-message">
-                <h3>Error</h3>
-                <p>${escapeHtml(data.error)}</p>
-                ${data.raw_response ? `<pre class="raw-response">${escapeHtml(data.raw_response)}</pre>` : ''}
-            </div>`;
-        }
-
         let html = '<div class="analysis-result">';
         
         // Key Clauses

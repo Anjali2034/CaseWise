@@ -235,9 +235,9 @@ document.addEventListener('DOMContentLoaded', function() {
     form.addEventListener('submit', whileBusy(async function(e) {
         e.preventDefault();
         
-        const document = documentInput.value.trim();
+        const legalText = documentInput.value.trim();
         
-        if (!document) {
+        if (!legalText) {
             alert('Please enter legal text or upload a PDF file');
             return;
         }
@@ -251,7 +251,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ legal_text: document })
+                body: JSON.stringify({ legal_text: legalText })
             });
 
             if (!response.ok) {

@@ -168,6 +168,57 @@ def test_pages_do_not_carry_their_own_upload_css(template):
     assert not re.search(r"^\.(upload-|file-input|file-info)", css, re.M)
 
 
+# ---------- small cleanups: items 4-10 (fix #23) ----------
+
+BASE = Path("templates/base.html").read_text(encoding="utf-8")
+
+
+def test_base_html_has_no_style_blocks_and_ends_at_html():
+    """Navbar CSS used to sit in a <style> block after </html>; colours in a second inline :root."""
+    assert "<style" not in BASE
+    assert BASE.rstrip().endswith("</html>")
+    assert ".navbar {" in STYLES and ".mobile-menu.active" in STYLES
+
+
+@pytest.mark.parametrize("page", PAGES)
+def test_every_page_has_exactly_one_main(client, page):
+    html = client.get(page).text
+    assert html.count("<main") == 1 and html.count("</main>") == 1
+
+
+def test_mobile_menu_button_is_accessible():
+    assert 'aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu"' in BASE
+    assert 'id="mobile-menu"' in BASE
+    assert "setAttribute('aria-expanded', String(open))" in BASE
+    assert "e.key === 'Escape'" in BASE
+
+
+def test_one_root_block_defines_every_colour_the_site_uses():
+    assert STYLES.count(":root {") == 1
+    root = css_rule(STYLES, ":root")
+    used = set(re.findall(r"var\((--[\w-]+)\)", STYLES))
+    for template in Path("templates").rglob("*.html"):
+        used |= set(re.findall(r"var\((--[\w-]+)\)", template.read_text(encoding="utf-8")))
+    defined = set(re.findall(r"(--[\w-]+):", root))
+    assert used <= defined, f"used but never defined: {used - defined}"  # --accent-color was missing
+    assert "--primary-color: #4CAF50" in root  # the green the site really shows
+
+
+def test_loading_box_counts_padding_inside_its_width():
+    assert "box-sizing: border-box" in css_rule(STYLES, ".loading")
+
+
+@pytest.mark.parametrize("template", sorted(Path("templates").rglob("*.html")), ids=lambda p: p.name)
+def test_no_local_variable_shadows_the_global_document(template):
+    assert not re.search(r"\b(const|let|var)\s+document\s*=", template.read_text(encoding="utf-8"))
+
+
+@pytest.mark.parametrize("template", ["contract-analyzer.html", "compliance-checker.html"])
+def test_no_dead_error_field_branches(template):
+    js = (Path("templates") / template).read_text(encoding="utf-8")
+    assert "data.error" not in js and "raw_response" not in js
+
+
 # ---------- global CSS must not override page components (fix #15) ----------
 
 def test_no_global_rules_that_restyle_every_textarea_or_submit_button():

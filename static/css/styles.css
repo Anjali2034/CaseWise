@@ -1,8 +1,11 @@
+/* Colours used across the whole site (the only :root block; base.html used to
+   override some of these with a second, inline one). */
 :root {
     --bg-color: #1a1a1a;
+    --card-bg: #2a2a2a;
     --text-color: #ffffff;
-    --primary-color: #3498db;
-    --card-bg: #2d2d2d;
+    --primary-color: #4CAF50;
+    --accent-color: #43a047;    /* slightly darker green, for hover on primary buttons */
     --border-color: rgba(255, 255, 255, 0.1);
 }
 
@@ -140,6 +143,7 @@ main {
    Usage: <div class="loading" data-label="Analyzing contract..." role="status" aria-live="polite"></div>
    Pages show it by setting style.display = 'block'. */
 .loading {
+    box-sizing: border-box;
     display: none;
     text-align: center;
     margin: 1rem auto;
@@ -176,5 +180,123 @@ main {
 @media (prefers-reduced-motion: reduce) {
     .loading::before {
         animation-duration: 3s;
+    }
+}
+
+/* Navbar (was a <style> block after </html> in base.html) */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background-color: var(--bg-color);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 1000;
+}
+
+.navbar-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.navbar-left {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.navbar-logo {
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+}
+
+.logo-text {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-color);
+    background: linear-gradient(45deg, var(--primary-color), #4CAF50);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.navbar-links {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.nav-link {
+    color: var(--text-color);
+    text-decoration: none;
+    font-size: 0.95rem;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+.nav-link:hover {
+    opacity: 1;
+}
+
+.mobile-menu-button {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+.mobile-menu {
+    display: none;
+    position: fixed;
+    top: 60px;
+    left: 0;
+    right: 0;
+    background-color: var(--bg-color);
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 999;
+}
+
+.mobile-nav-link {
+    display: block;
+    color: var(--text-color);
+    text-decoration: none;
+    padding: 0.75rem 0;
+    font-size: 1rem;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+.mobile-nav-link:hover {
+    opacity: 1;
+}
+
+@media (max-width: 768px) {
+    .navbar-links {
+        display: none;
+    }
+
+    .mobile-menu-button {
+        display: block;
+    }
+
+    .mobile-menu {
+        display: none;
+    }
+
+    .mobile-menu.active {
+        display: block;
+    }
+
+    .mobile-menu-button.active {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
     }
 }

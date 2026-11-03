@@ -6,14 +6,6 @@
     <title>{% block title %}LegalEdge AI{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
     {% block extra_css %}{% endblock %}
-    <style>
-        :root {
-            --bg-color: #1a1a1a;
-            --card-bg: #2a2a2a;
-            --text-color: #ffffff;
-            --primary-color: #4CAF50;
-        }
-    </style>
 </head>
 <body>
     <nav class="navbar">
@@ -30,15 +22,15 @@
                     <a href="/document-simplifier" class="nav-link">Document Simplifier</a>
                 </div>
             </div>
-            <button class="mobile-menu-button">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <button class="mobile-menu-button" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu">
+                <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M4 6H20M4 12H20M4 18H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </button>
         </div>
     </nav>
 
-    <div class="mobile-menu">
+    <div class="mobile-menu" id="mobile-menu">
         <a href="/legal-assistant" class="mobile-nav-link">Legal Assistant</a>
         <a href="/document-generator" class="mobile-nav-link">Document Generator</a>
         <a href="/contract-analyzer" class="mobile-nav-link">Contract Analyzer</a>
@@ -100,20 +92,31 @@
             };
         }
 
-        // Mobile menu toggle
+        // Mobile menu: open/close, and keep aria-expanded / aria-label in sync
         const mobileMenuButton = document.querySelector('.mobile-menu-button');
         const mobileMenu = document.querySelector('.mobile-menu');
-        
+
+        function setMenuOpen(open) {
+            mobileMenu.classList.toggle('active', open);
+            mobileMenuButton.classList.toggle('active', open);
+            mobileMenuButton.setAttribute('aria-expanded', String(open));
+            mobileMenuButton.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+        }
+
         mobileMenuButton.addEventListener('click', () => {
-            mobileMenu.classList.toggle('active');
-            mobileMenuButton.classList.toggle('active');
+            setMenuOpen(!mobileMenu.classList.contains('active'));
         });
 
-        // Close mobile menu when clicking outside
+        // Close when clicking outside the menu, or with the Escape key
         document.addEventListener('click', (e) => {
             if (!mobileMenu.contains(e.target) && !mobileMenuButton.contains(e.target)) {
-                mobileMenu.classList.remove('active');
-                mobileMenuButton.classList.remove('active');
+                setMenuOpen(false);
+            }
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && mobileMenu.classList.contains('active')) {
+                setMenuOpen(false);
+                mobileMenuButton.focus();
             }
         });
     </script>
@@ -121,122 +124,3 @@
 </body>
 </html>
 
-<style>
-/* Navbar Styles */
-.navbar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 60px;
-    background-color: var(--bg-color);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    z-index: 1000;
-}
-
-.navbar-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 1rem;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.navbar-left {
-    display: flex;
-    align-items: center;
-    gap: 2rem;
-}
-
-.navbar-logo {
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-}
-
-.logo-text {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--text-color);
-    background: linear-gradient(45deg, var(--primary-color), #4CAF50);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.navbar-links {
-    display: flex;
-    gap: 1.5rem;
-}
-
-.nav-link {
-    color: var(--text-color);
-    text-decoration: none;
-    font-size: 0.95rem;
-    opacity: 0.8;
-    transition: opacity 0.2s ease;
-}
-
-.nav-link:hover {
-    opacity: 1;
-}
-
-.mobile-menu-button {
-    display: none;
-    background: none;
-    border: none;
-    color: var(--text-color);
-    cursor: pointer;
-    padding: 0.5rem;
-}
-
-.mobile-menu {
-    display: none;
-    position: fixed;
-    top: 60px;
-    left: 0;
-    right: 0;
-    background-color: var(--bg-color);
-    padding: 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    z-index: 999;
-}
-
-.mobile-nav-link {
-    display: block;
-    color: var(--text-color);
-    text-decoration: none;
-    padding: 0.75rem 0;
-    font-size: 1rem;
-    opacity: 0.8;
-    transition: opacity 0.2s ease;
-}
-
-.mobile-nav-link:hover {
-    opacity: 1;
-}
-
-@media (max-width: 768px) {
-    .navbar-links {
-        display: none;
-    }
-
-    .mobile-menu-button {
-        display: block;
-    }
-
-    .mobile-menu {
-        display: none;
-    }
-
-    .mobile-menu.active {
-        display: block;
-    }
-
-    .mobile-menu-button.active {
-        background-color: rgba(255, 255, 255, 0.1);
-        border-radius: 6px;
-    }
-}
-</style> 
