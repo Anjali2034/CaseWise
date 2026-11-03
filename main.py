@@ -224,128 +224,68 @@ async def compliance_checker_page(request: Request):
 async def document_simplifier_page(request: Request):
     return templates.TemplateResponse(request, "document-simplifier.html")
 
-@app.post("/legal-assistant")
-def legal_assistant(question: Question):
+def run_tool(name: str, task, text: str):
+    """Run one AI tool on `text` and turn every failure into the right HTTP error.
+
+    All eight API endpoints go through here, so error handling lives in one place.
+    """
     try:
-        logger.info(f"Legal assistant request received ({len(question.question)} chars)")
-        response = llm.legal_assistant(question.question)
-        return {"response": response}
+        result = task(text)
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error in legal_assistant endpoint: {str(e)}")
+        logger.error(f"{name} failed: {type(e).__name__}")
         raise handle_llm_error(e)
+    if not result:
+        raise HTTPException(status_code=502, detail="The AI returned an empty answer. Please try again.")
+    return result
+
+
+# ---------- Text endpoints ----------
+
+@app.post("/legal-assistant")
+def legal_assistant(question: Question):
+    logger.info(f"Legal assistant request received ({len(question.question)} chars)")
+    return {"response": run_tool("Legal assistant", llm.legal_assistant, question.question)}
 
 @app.post("/generate-document")
 def generate_document(request: DocumentRequest):
-    try:
-        logger.info(f"Document generation request received ({len(request.prompt)} chars)")
-        response = llm.generate_document(request.prompt)
-        logger.info(f"Successfully generated document of length: {len(response)}")
-        return {"response": response}
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error in generate_document endpoint: {str(e)}")
-        logger.error(f"Stack trace: {traceback.format_exc()}")
-        raise handle_llm_error(e)
+    logger.info(f"Document generation request received ({len(request.prompt)} chars)")
+    return {"response": run_tool("Document generation", llm.generate_document, request.prompt)}
 
 @app.post("/analyze-contract")
 def analyze_contract(request: ContractRequest):
-    try:
-        logger.info("Processing contract analysis request")
-        response = llm.analyze_contract(request.contract_text)
-        return response
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error in analyze_contract endpoint: {str(e)}")
-        raise handle_llm_error(e)
+    logger.info("Contract analysis request received")
+    return run_tool("Contract analysis", llm.analyze_contract, request.contract_text)
 
 @app.post("/check-compliance")
 def check_compliance(request: ComplianceRequest):
-    try:
-        logger.info("Processing compliance check request")
-        response = llm.check_compliance(request.legal_text)
-        return response
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error in check_compliance endpoint: {str(e)}")
-        raise handle_llm_error(e)
+    logger.info("Compliance check request received")
+    return run_tool("Compliance check", llm.check_compliance, request.legal_text)
 
 @app.post("/simplify-document")
 def simplify_document(request: SimplificationRequest):
-    try:
-        logger.info("Processing document simplification request")
-        response = llm.simplify_document(request.legal_text)
-        if not response:
-            raise HTTPException(
-                status_code=500,
-                detail="Failed to generate simplified text"
-            )
-            
-        return {"response": response}
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error in simplify_document endpoint: {str(e)}")
-        logger.error(f"Stack trace: {traceback.format_exc()}")
-        raise handle_llm_error(e)
+    logger.info("Simplification request received")
+    return {"response": run_tool("Simplification", llm.simplify_document, request.legal_text)}
+
+
+# ---------- PDF endpoints: same tools, text comes from an uploaded PDF ----------
 
 @app.post("/simplify-document-pdf")
 def simplify_document_pdf(file: UploadFile = File(...)):
-    try:
-        logger.info("PDF received for simplification")
-        
-        text = extract_pdf_text(file)
-        
-        # Simplify the extracted text
-        logger.info("Simplifying extracted text from PDF")
-        response = llm.simplify_document(text)
-        return {"response": response}
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error processing PDF: {str(e)}")
-        raise handle_llm_error(e)
+    logger.info("PDF received for simplification")
+    return {"response": run_tool("Simplification (PDF)", llm.simplify_document, extract_pdf_text(file))}
 
 @app.post("/analyze-contract-pdf")
 def analyze_contract_pdf(file: UploadFile = File(...)):
-    try:
-        logger.info("PDF received for contract analysis")
-        
-        text = extract_pdf_text(file)
-        
-        # Analyze the extracted text
-        logger.info("Analyzing extracted text from PDF")
-        response = llm.analyze_contract(text)
-        return response
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error processing PDF: {str(e)}")
-        raise handle_llm_error(e)
+    logger.info("PDF received for contract analysis")
+    return run_tool("Contract analysis (PDF)", llm.analyze_contract, extract_pdf_text(file))
 
 @app.post("/check-compliance-pdf")
 def check_compliance_pdf(file: UploadFile = File(...)):
-    try:
-        logger.info("PDF received for compliance check")
-        
-        text = extract_pdf_text(file)
-        
-        # Check compliance of the extracted text
-        logger.info("Checking compliance of extracted text from PDF")
-        response = llm.check_compliance(text)
-        return response
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error processing PDF: {str(e)}")
-        raise handle_llm_error(e)
+    logger.info("PDF received for compliance check")
+    return run_tool("Compliance check (PDF)", llm.check_compliance, extract_pdf_text(file))
+
 
 if __name__ == "__main__":
     import uvicorn

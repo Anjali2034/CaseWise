@@ -179,6 +179,28 @@ def test_unparseable_model_output_is_502(client, llm_reply, endpoint, key):
     assert "unexpected format" in r.json()["detail"]
 
 
+# ---------- empty answers (fix #26) ----------
+
+@pytest.mark.parametrize("endpoint, key", [(ep, k) for ep, k in ALL_ENDPOINTS
+                                           if "analyze" not in ep and "compliance" not in ep])
+def test_empty_model_answer_is_502_on_every_text_tool(client, llm_reply, endpoint, key):
+    llm_reply("")  # the model streams nothing
+    r = post(client, endpoint, key)
+    assert r.status_code == 502
+    assert r.json()["detail"] == "The AI returned an empty answer. Please try again."
+
+
+def test_all_endpoints_share_one_error_handler():
+    """Every API endpoint goes through run_tool(), so error handling can't drift apart again."""
+    import inspect
+    source = inspect.getsource(main)
+    for name in ["legal_assistant", "generate_document", "analyze_contract", "check_compliance",
+                 "simplify_document", "simplify_document_pdf", "analyze_contract_pdf", "check_compliance_pdf"]:
+        body = inspect.getsource(getattr(main, name))
+        assert "run_tool(" in body and "try:" not in body, name
+    assert source.count("raise handle_llm_error(e)") == 1
+
+
 # ---------- no internal details leak (fix #9) ----------
 
 SECRET = r"C:\internal\secret\config.py api_key=xyz"

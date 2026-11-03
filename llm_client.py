@@ -1,9 +1,8 @@
 import requests
 import json
-from typing import Generator, Dict, Any
+from typing import Dict, Any
 import time
 import logging
-import traceback
 import re
 
 import prompts
@@ -127,36 +126,24 @@ class OllamaClient:
                 logger.error(f"Ollama stream failed: {e}")
                 raise LLMError(f"Ollama stream failed: {e}") from e
 
+    def _complete(self, prompt: str, system_prompt: str) -> str:
+        """Run the model and return its whole answer as one string ("" if it said nothing).
+
+        Errors propagate as LLMError subclasses; main.run_tool turns them, and empty
+        answers, into the right HTTP response.
+        """
+        return "".join(self._generate_stream(prompt, system_prompt))
+
     def generate_document(self, prompt: str) -> str:
         """Generate a legal document based on the prompt."""
-        logger.info(f"Starting document generation ({len(prompt)} chars)")
-        system_prompt = prompts.DOCUMENT_GENERATOR
-        
-        full_response = ""
-        try:
-            for chunk in self._generate_stream(prompt, system_prompt):
-                full_response += chunk
-            
-            if not full_response:
-                logger.error("No response generated from Ollama")
-                raise Exception("No response generated from Ollama")
-                
-            logger.info(f"Successfully generated document of length: {len(full_response)}")
-            return full_response
-        except Exception as e:
-            logger.error(f"Error in generate_document: {str(e)}")
-            logger.error(f"Stack trace: {traceback.format_exc()}")
-            raise
+        return self._complete(prompt, prompts.DOCUMENT_GENERATOR)
 
     def analyze_contract(self, contract_text: str) -> Dict[str, Any]:
         """Analyze a contract and extract key information."""
         system_prompt = prompts.CONTRACT_ANALYZER
         
         prompt = f"Analyze this contract and provide the analysis in the specified JSON format:\n\n{contract_text}"
-        # Connection/model errors propagate to the endpoint (-> 503/500).
-        full_response = ""
-        for chunk in self._generate_stream(prompt, system_prompt):
-            full_response += chunk
+        full_response = self._complete(prompt, system_prompt)
 
         # Try to parse the response as JSON
         try:
@@ -176,28 +163,14 @@ class OllamaClient:
 
     def legal_assistant(self, question: str) -> str:
         """Answer a legal question with general information (not legal advice)."""
-        logger.info("Processing legal assistant request")
-        system_prompt = prompts.LEGAL_ASSISTANT
-        
-        full_response = ""
-        try:
-            for chunk in self._generate_stream(question, system_prompt):
-                full_response += chunk
-            logger.info("Successfully generated legal assistant response")
-            return full_response
-        except Exception as e:
-            logger.error(f"Error in legal_assistant: {str(e)}")
-            raise
+        return self._complete(question, prompts.LEGAL_ASSISTANT)
 
     def check_compliance(self, legal_text: str) -> Dict[str, Any]:
         """Check legal text for compliance and required clauses."""
         system_prompt = prompts.COMPLIANCE_CHECKER
         
         prompt = f"Check compliance for this legal text and provide the analysis in the specified JSON format:\n\n{legal_text}"
-        # Connection/model errors propagate to the endpoint (-> 503/500).
-        full_response = ""
-        for chunk in self._generate_stream(prompt, system_prompt):
-            full_response += chunk
+        full_response = self._complete(prompt, system_prompt)
 
         # Try to parse the response as JSON
         try:
@@ -250,26 +223,4 @@ class OllamaClient:
 
     def simplify_document(self, legal_text: str) -> str:
         """Convert complex legal text into plain English."""
-        try:
-            logger.info("Starting document simplification")
-            if not legal_text or not legal_text.strip():
-                raise ValueError("Legal text cannot be empty")
-                
-            system_prompt = prompts.DOCUMENT_SIMPLIFIER
-            
-            prompt = f"Simplify this legal text:\n\n{legal_text}"
-            
-            full_response = ""
-            for chunk in self._generate_stream(prompt, system_prompt):
-                full_response += chunk
-                    
-            if not full_response:
-                raise Exception("No response generated from Ollama")
-                
-            logger.info("Successfully simplified document")
-            return full_response
-            
-        except Exception as e:
-            logger.error(f"Error in simplify_document: {str(e)}")
-            logger.error(f"Stack trace: {traceback.format_exc()}")
-            raise 
+        return self._complete(f"Simplify this legal text:\n\n{legal_text}", prompts.DOCUMENT_SIMPLIFIER)
