@@ -49,3 +49,24 @@ def test_llm_endpoints_are_sync_so_they_run_in_a_threadpool():
                  "simplify_document", "simplify_document_pdf", "analyze_contract_pdf",
                  "check_compliance_pdf"]:
         assert not inspect.iscoroutinefunction(getattr(main, name)), name
+
+
+# ---------- home page content (fix #12) ----------
+
+FABRICATED_CLAIMS = ["Trusted by", "thousands", "Sarah Johnson", "Michael Chen",
+                     "Emily Rodriguez", "the best way", "testimonial"]
+
+
+@pytest.mark.parametrize("claim", FABRICATED_CLAIMS)
+def test_home_page_has_no_fabricated_social_proof(client, claim):
+    assert claim.lower() not in client.get("/").text.lower()
+
+
+@pytest.mark.parametrize("tool", ["Legal Assistant", "Document Generation", "Contract Analysis",
+                                  "Compliance Checking", "Document Simplification"])
+def test_home_page_lists_every_tool(client, tool):
+    assert tool in client.get("/").text
+
+
+def test_home_page_states_its_limits(client):
+    assert "Not a Substitute for a Lawyer" in client.get("/").text

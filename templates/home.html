@@ -8,7 +8,7 @@
     <section class="hero">
         <div class="hero-content">
             <h1>The AI Legal Assistant</h1>
-            <p class="hero-subtitle">Built to make legal document analysis extraordinarily simple, AutoDocuGen is the best way to handle legal documents with AI.</p>
+            <p class="hero-subtitle">Draft, analyze, check and simplify legal documents with AI, explained in plain language.</p>
             <div class="cta-buttons">
                 <a href="/document-generator" class="primary-button">Get Started</a>
                 <a href="#features" class="secondary-button">Learn More</a>
@@ -16,20 +16,14 @@
         </div>
     </section>
 
-    <!-- Trusted By Section -->
-    <section class="trusted-by">
-        <p>Trusted by legal professionals at</p>
-        <div class="company-logos">
-            <span>Law Firms</span>
-            <span>Legal Departments</span>
-            <span>Compliance Teams</span>
-            <span>Legal Tech</span>
-        </div>
-    </section>
-
     <!-- Features Section -->
     <section id="features" class="features">
         <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">💬</div>
+                <h3>Legal Assistant</h3>
+                <p>Ask general legal questions and get clear, plain-language explanations.</p>
+            </div>
             <div class="feature-card">
                 <div class="feature-icon">📝</div>
                 <h3>Document Generation</h3>
@@ -75,30 +69,24 @@
         </div>
     </section>
 
-    <!-- Testimonials Section -->
-    <section class="testimonials">
-        <h2>Loved by Legal Professionals</h2>
-        <div class="testimonial-grid">
-            <div class="testimonial-card">
-                <p>"AutoDocuGen has revolutionized how we handle legal documents. It's an incredible time-saver."</p>
-                <div class="testimonial-author">
-                    <strong>Sarah Johnson</strong>
-                    <span>Senior Legal Counsel</span>
-                </div>
+    <!-- Privacy Section -->
+    <section class="privacy">
+        <h2>Built With Your Documents in Mind</h2>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🖥️</div>
+                <h3>Use Your Own AI Model</h3>
+                <p>Runs on Ollama, which can run on your own computer, so your documents don't have to go to a third-party AI service.</p>
             </div>
-            <div class="testimonial-card">
-                <p>"The document simplification feature is a game-changer for our client communications."</p>
-                <div class="testimonial-author">
-                    <strong>Michael Chen</strong>
-                    <span>Law Firm Partner</span>
-                </div>
+            <div class="feature-card">
+                <div class="feature-icon">🗑️</div>
+                <h3>Nothing Is Stored</h3>
+                <p>There is no database. Uploaded documents are processed in memory and are never written to logs.</p>
             </div>
-            <div class="testimonial-card">
-                <p>"Finally, a tool that makes legal document analysis accessible and efficient."</p>
-                <div class="testimonial-author">
-                    <strong>Emily Rodriguez</strong>
-                    <span>Compliance Officer</span>
-                </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚖️</div>
+                <h3>Not a Substitute for a Lawyer</h3>
+                <p>AI can make mistakes. Use the results as a starting point and have important documents reviewed by a qualified lawyer.</p>
             </div>
         </div>
     </section>
@@ -106,7 +94,7 @@
     <!-- CTA Section -->
     <section class="cta-section">
         <h2>Ready to Transform Your Legal Document Workflow?</h2>
-        <p>Join thousands of legal professionals who trust AutoDocuGen</p>
+        <p>Pick a tool and try it on your own document in seconds.</p>
         <a href="/document-generator" class="primary-button">Get Started Now</a>
     </section>
 </main>
@@ -186,30 +174,6 @@
     background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* Trusted By Section */
-.trusted-by {
-    text-align: center;
-    padding: 3rem 2rem;
-    background-color: var(--card-bg);
-}
-
-.trusted-by p {
-    color: rgba(255, 255, 255, 0.6);
-    margin-bottom: 1.5rem;
-}
-
-.company-logos {
-    display: flex;
-    justify-content: center;
-    gap: 3rem;
-    flex-wrap: wrap;
-}
-
-.company-logos span {
-    color: rgba(255, 255, 255, 0.8);
-    font-weight: 500;
-}
-
 /* Features Section */
 .features {
     padding: 6rem 2rem;
@@ -284,39 +248,14 @@
     font-weight: bold;
 }
 
-/* Testimonials Section */
-.testimonials {
+/* Privacy Section */
+.privacy {
     padding: 6rem 2rem;
     text-align: center;
 }
 
-.testimonial-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2rem;
-    max-width: 1200px;
-    margin: 3rem auto 0;
-}
-
-.testimonial-card {
-    background-color: var(--card-bg);
-    padding: 2rem;
-    border-radius: 12px;
-    text-align: left;
-}
-
-.testimonial-author {
-    margin-top: 1.5rem;
-}
-
-.testimonial-author strong {
-    display: block;
-    color: var(--primary-color);
-}
-
-.testimonial-author span {
-    color: rgba(255, 255, 255, 0.6);
-    font-size: 0.9rem;
+.privacy h2 {
+    margin-bottom: 3rem;
 }
 
 /* CTA Section */
