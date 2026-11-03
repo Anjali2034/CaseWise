@@ -32,7 +32,7 @@ Tracks every fix and feature. Each item is done in its own commit.
 - [x] Fix retry logic: no duplicated text after a partial stream, no retrying 4xx errors, fail fast when Ollama is down (was ~10s before the 503)
 - [x] Make the model name configurable (env var) and make the error messages match it
 - [x] Stop logging full documents, prompts and streamed chunks; remove `console.log` of user text
-- [ ] Don't leak internal error details to users
+- [x] Don't leak internal error details to users
 - [ ] Add input limits: max text length, max PDF size, server-side PDF type check
 - [ ] Tighten CORS settings (no `*` with credentials)
 
@@ -107,4 +107,5 @@ Tracks every fix and feature. Each item is done in its own commit.
 | 6 | Analysis and compliance stop returning 200 on failure: Ollama down returns 503, unparseable model output returns 502 (`LLMResponseFormatError`) | `e42eca5` |
 | 7 | Retry policy: 1 retry, transient errors only, never after text has been yielded; real streaming (`stream=True`); typed errors (404 returns 503 with the correct model name, timeout returns 504, stream errors no longer become an empty 200) | `721ba1a` |
 | 8 | `OLLAMA_MODEL` env var (default `llama2`); `.env` loading via python-dotenv; `.env.example`; render.yaml updated | `0dd5038` |
-| 9 | Privacy: logs record sizes, not content (no questions, prompts, chunks or PDF filenames); removed 40 debug `console.log` calls | _(your commit)_ |
+| 9 | Privacy: logs record sizes, not content (no questions, prompts, chunks or PDF filenames); removed 40 debug `console.log` calls | `47af719` |
+| 10 | No raw exception text sent to users: unexpected errors return a generic 500 with an error ID (full trace logged under that ID); other Ollama errors return 502 | _(your commit)_ |

@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from typing import Dict, Any, Optional
 from ollama_client import (
     OllamaClient,
+    LLMError,
     LLMResponseFormatError,
     LLMTimeoutError,
     ModelNotFoundError,
@@ -15,6 +16,7 @@ from ollama_client import (
 from dotenv import load_dotenv
 import traceback
 import logging
+import uuid
 import os
 import PyPDF2
 import io
@@ -100,11 +102,20 @@ def handle_ollama_error(e: Exception) -> HTTPException:
             status_code=504,
             detail="The AI model took too long to respond. Please try again with a shorter text."
         )
+    elif isinstance(e, LLMError):
+        # Any other error reported by Ollama (e.g. the model crashed mid-answer)
+        return HTTPException(
+            status_code=502,
+            detail="The AI service returned an error. Please try again."
+        )
     else:
-        logger.error(f"Unexpected error: {traceback.format_exc()}")
+        # Never send raw exception text to the browser. Log it under a short
+        # ID the user can quote, so the full trace can be found in the logs.
+        error_id = uuid.uuid4().hex[:8]
+        logger.error(f"Unexpected error [{error_id}]: {traceback.format_exc()}")
         return HTTPException(
             status_code=500,
-            detail=f"Error processing request: {error_msg}"
+            detail=f"Something went wrong while processing your request (error ID: {error_id}). Please try again."
         )
 
 def extract_pdf_text(file: UploadFile) -> str:
@@ -226,7 +237,7 @@ def simplify_document(request: SimplificationRequest):
         raise
     except ValueError as e:
         logger.error(f"Validation error in simplify_document endpoint: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail="Legal text cannot be empty")
     except Exception as e:
         logger.error(f"Error in simplify_document endpoint: {str(e)}")
         logger.error(f"Stack trace: {traceback.format_exc()}")
