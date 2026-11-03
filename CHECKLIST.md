@@ -25,10 +25,10 @@ Tracks every fix and feature. Each item is done in its own commit.
 ### Security and correctness
 - [x] Fix XSS: escape LLM output and error messages before inserting into the page (contract analyzer, compliance checker, simplifier)
 - [x] Stop blocking the server: make LLM endpoints non-blocking (`def` endpoints or async HTTP client)
-- [ ] Don't crash on startup when Ollama is unreachable; add a `/health` endpoint
+- [x] Don't crash on startup when Ollama is unreachable; add a `/health` endpoint
 - [ ] Fix 400 errors being returned as 500 (empty text, unreadable PDF)
 - [ ] Return proper HTTP errors from contract analysis and compliance check (no 200 responses with an `error` field)
-- [ ] Fix retry logic: no duplicated text after a partial stream, no retrying 4xx errors
+- [ ] Fix retry logic: no duplicated text after a partial stream, no retrying 4xx errors, fail fast when Ollama is down (currently ~10s before the 503)
 - [ ] Make the model name configurable (env var) and make the error messages match it
 - [ ] Stop logging full documents, prompts and streamed chunks; remove `console.log` of user text
 - [ ] Don't leak internal error details to users
@@ -100,4 +100,5 @@ Tracks every fix and feature. Each item is done in its own commit.
 |---|--------|--------|
 | 1 | Baseline: existing code, checklist, .gitignore | `734b44a` |
 | 2 | Fix XSS: shared `escapeHtml()` in base.html, used on every `innerHTML` insert | `ce1dc65` |
-| 3 | Non-blocking LLM endpoints (`async def` → `def`); a page load during a slow LLM call went from 2.54s to 0.03s | _(your commit)_ |
+| 3 | Non-blocking LLM endpoints (`async def` → `def`); a page load during a slow LLM call went from 2.54s to 0.03s | `2508918` |
+| 4 | App starts without Ollama; `GET /health` endpoint; connection failures return 503 instead of a raw 500 | _(your commit)_ |

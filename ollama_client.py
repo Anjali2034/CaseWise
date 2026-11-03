@@ -17,20 +17,23 @@ class OllamaClient:
         self.timeout = 120  # Increased timeout to 120 seconds
         self.max_retries = 3
         self.retry_delay = 2  # Delay between retries in seconds
-        self._verify_connection()
 
-    def _verify_connection(self):
-        """Verify that the Ollama server is running and accessible."""
+    def check_health(self) -> Dict[str, Any]:
+        """Report whether the Ollama server is reachable and the model is installed.
+
+        Never raises, so it is safe to call at startup and from /health.
+        """
         try:
             response = requests.get(f"{self.base_url}/api/tags", timeout=5)
             response.raise_for_status()
-            logger.info("Successfully connected to Ollama server")
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Failed to connect to Ollama server at {self.base_url}")
-            logger.error(f"Error: {str(e)}")
-            raise Exception(
-                "Could not connect to Ollama server. Please make sure it's running by executing 'ollama serve' in a terminal."
+            installed = [m.get("name", "") for m in response.json().get("models", [])]
+            model_available = any(
+                name == self.model or name.split(":")[0] == self.model for name in installed
             )
+            return {"ollama_reachable": True, "model": self.model, "model_available": model_available}
+        except (requests.exceptions.RequestException, ValueError) as e:
+            logger.warning(f"Ollama server at {self.base_url} is not reachable: {e}")
+            return {"ollama_reachable": False, "model": self.model, "model_available": False}
 
     def _generate_stream(self, prompt, system_prompt=None):
         """Generate a stream of text from the model."""
@@ -76,6 +79,18 @@ class OllamaClient:
                 else:
                     raise Exception(f"Failed to generate response after {max_retries} attempts: {str(e)}")
                     
+            except requests.exceptions.ConnectionError as e:
+                retry_count += 1
+                logger.error(f"Attempt {retry_count} failed: {str(e)}")
+                if retry_count < max_retries:
+                    logger.info(f"Retrying in 2 seconds...")
+                    time.sleep(2)
+                else:
+                    # main.handle_ollama_error matches on this text to return a 503
+                    raise Exception(
+                        "Could not connect to Ollama server. Please make sure it's running by executing 'ollama serve' in a terminal."
+                    )
+
             except requests.exceptions.RequestException as e:
                 retry_count += 1
                 logger.error(f"Attempt {retry_count} failed: {str(e)}")

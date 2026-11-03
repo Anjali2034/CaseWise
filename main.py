@@ -37,15 +37,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize Ollama client
-try:
-    logger.info("Initializing Ollama client...")
-    ollama_client = OllamaClient(base_url=OLLAMA_API_BASE)
+# Initialize Ollama client. The app starts even if Ollama is down;
+# requests will return 503 until it is reachable. See /health.
+ollama_client = OllamaClient(base_url=OLLAMA_API_BASE)
+_startup_health = ollama_client.check_health()
+if not _startup_health["ollama_reachable"]:
+    logger.warning(f"Ollama is not reachable at {OLLAMA_API_BASE}. AI features will fail until it is running.")
+elif not _startup_health["model_available"]:
+    logger.warning(f"Model '{ollama_client.model}' is not installed. Run: ollama pull {ollama_client.model}")
+else:
     logger.info("Ollama client initialized successfully")
-except Exception as e:
-    logger.error(f"Error initializing Ollama client: {str(e)}")
-    logger.error("Please make sure Ollama is running and the model is available.")
-    raise
 
 # Request models
 class Question(BaseModel):
@@ -84,6 +85,13 @@ def handle_ollama_error(e: Exception) -> HTTPException:
             status_code=500,
             detail=f"Error processing request: {error_msg}"
         )
+
+@app.get("/health")
+def health():
+    """Liveness + dependency check. Always 200 while the web app is up."""
+    llm = ollama_client.check_health()
+    status = "ok" if llm["ollama_reachable"] and llm["model_available"] else "degraded"
+    return {"status": status, **llm}
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
