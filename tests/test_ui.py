@@ -41,6 +41,21 @@ def test_response_area_counts_padding_inside_its_width():
     assert "box-sizing: border-box" in block
 
 
+# ---------- result box hidden until there is a result (fix #18) ----------
+
+RESULT_PAGES = ["/contract-analyzer", "/compliance-checker", "/document-generator", "/document-simplifier"]
+
+
+def test_empty_result_box_is_hidden():
+    assert re.search(r"\.response-area:empty \{\s*display: none;\s*\}", STYLES)
+
+
+@pytest.mark.parametrize("path", RESULT_PAGES)
+def test_result_box_starts_truly_empty_and_is_announced(client, path):
+    """:empty only matches with no whitespace inside, so the markup must be exactly this."""
+    assert '<div id="response" class="response-area" aria-live="polite"></div>' in client.get(path).text
+
+
 # ---------- global CSS must not override page components (fix #15) ----------
 
 def test_no_global_rules_that_restyle_every_textarea_or_submit_button():

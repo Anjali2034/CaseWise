@@ -45,6 +45,11 @@ button {
     color: var(--text-color);
 }
 
+/* Only show the result box once there is a result (or an error) in it */
+.response-area:empty {
+    display: none;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .response-area {
