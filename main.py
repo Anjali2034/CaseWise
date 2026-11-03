@@ -110,7 +110,7 @@ async def document_simplifier_page(request: Request):
     return templates.TemplateResponse("document-simplifier.html", {"request": request})
 
 @app.post("/legal-assistant")
-async def legal_assistant(question: Question):
+def legal_assistant(question: Question):
     try:
         logger.info(f"Processing legal assistant request: {question.question}")
         response = ollama_client.legal_assistant(question.question)
@@ -120,7 +120,7 @@ async def legal_assistant(question: Question):
         raise handle_ollama_error(e)
 
 @app.post("/generate-document")
-async def generate_document(request: DocumentRequest):
+def generate_document(request: DocumentRequest):
     try:
         logger.info(f"Received document generation request with prompt: {request.prompt}")
         response = ollama_client.generate_document(request.prompt)
@@ -132,7 +132,7 @@ async def generate_document(request: DocumentRequest):
         raise handle_ollama_error(e)
 
 @app.post("/analyze-contract")
-async def analyze_contract(request: ContractRequest):
+def analyze_contract(request: ContractRequest):
     try:
         logger.info("Processing contract analysis request")
         response = ollama_client.analyze_contract(request.contract_text)
@@ -142,7 +142,7 @@ async def analyze_contract(request: ContractRequest):
         raise handle_ollama_error(e)
 
 @app.post("/check-compliance")
-async def check_compliance(request: ComplianceRequest):
+def check_compliance(request: ComplianceRequest):
     try:
         logger.info("Processing compliance check request")
         response = ollama_client.check_compliance(request.legal_text)
@@ -152,7 +152,7 @@ async def check_compliance(request: ComplianceRequest):
         raise handle_ollama_error(e)
 
 @app.post("/simplify-document")
-async def simplify_document(request: SimplificationRequest):
+def simplify_document(request: SimplificationRequest):
     try:
         logger.info("Processing document simplification request")
         if not request.legal_text or not request.legal_text.strip():
@@ -178,12 +178,12 @@ async def simplify_document(request: SimplificationRequest):
         raise handle_ollama_error(e)
 
 @app.post("/simplify-document-pdf")
-async def simplify_document_pdf(file: UploadFile = File(...)):
+def simplify_document_pdf(file: UploadFile = File(...)):
     try:
         logger.info(f"Received PDF file for simplification: {file.filename}")
         
         # Read the PDF file
-        contents = await file.read()
+        contents = file.file.read()
         pdf_file = io.BytesIO(contents)
         
         # Extract text from PDF
@@ -212,12 +212,12 @@ async def simplify_document_pdf(file: UploadFile = File(...)):
         )
 
 @app.post("/analyze-contract-pdf")
-async def analyze_contract_pdf(file: UploadFile = File(...)):
+def analyze_contract_pdf(file: UploadFile = File(...)):
     try:
         logger.info(f"Received PDF file: {file.filename}")
         
         # Read the PDF file
-        contents = await file.read()
+        contents = file.file.read()
         pdf_file = io.BytesIO(contents)
         
         # Extract text from PDF
@@ -246,12 +246,12 @@ async def analyze_contract_pdf(file: UploadFile = File(...)):
         )
 
 @app.post("/check-compliance-pdf")
-async def check_compliance_pdf(file: UploadFile = File(...)):
+def check_compliance_pdf(file: UploadFile = File(...)):
     try:
         logger.info(f"Received PDF file for compliance check: {file.filename}")
         
         # Read the PDF file
-        contents = await file.read()
+        contents = file.file.read()
         pdf_file = io.BytesIO(contents)
         
         # Extract text from PDF

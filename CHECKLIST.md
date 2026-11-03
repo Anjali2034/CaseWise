@@ -18,12 +18,13 @@ Tracks every fix and feature. Each item is done in its own commit.
 
 ### Setup
 - [x] Initialise git repo, add CHECKLIST.md, baseline commit of existing code
-- [ ] Push to GitHub (create repo, add remote)
+- [x] Push to GitHub: https://github.com/Anjali2034/Casewise-AI
+- [ ] Add `.gitattributes` so line endings are consistent (removes the LF/CRLF warnings)
 - [ ] Add README.md and `.env.example`
 
 ### Security and correctness
 - [x] Fix XSS: escape LLM output and error messages before inserting into the page (contract analyzer, compliance checker, simplifier)
-- [ ] Stop blocking the server: make LLM endpoints non-blocking (`def` endpoints or async HTTP client)
+- [x] Stop blocking the server: make LLM endpoints non-blocking (`def` endpoints or async HTTP client)
 - [ ] Don't crash on startup when Ollama is unreachable; add a `/health` endpoint
 - [ ] Fix 400 errors being returned as 500 (empty text, unreadable PDF)
 - [ ] Return proper HTTP errors from contract analysis and compliance check (no 200 responses with an `error` field)
@@ -98,4 +99,5 @@ Tracks every fix and feature. Each item is done in its own commit.
 | # | Change | Commit |
 |---|--------|--------|
 | 1 | Baseline: existing code, checklist, .gitignore | `734b44a` |
-| 2 | Fix XSS: shared `escapeHtml()` in base.html, used on every `innerHTML` insert | _(your commit)_ |
+| 2 | Fix XSS: shared `escapeHtml()` in base.html, used on every `innerHTML` insert | `ce1dc65` |
+| 3 | Non-blocking LLM endpoints (`async def` → `def`); a page load during a slow LLM call went from 2.54s to 0.03s | _(your commit)_ |
