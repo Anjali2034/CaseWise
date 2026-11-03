@@ -1,0 +1,19 @@
+# Store and check out text files with LF line endings on every OS.
+# Stops the "LF will be replaced by CRLF" warnings on Windows and keeps
+# diffs clean when people on different systems edit the same files.
+* text=auto eol=lf
+
+# Windows-only scripts need CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary files: never touch their bytes
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary

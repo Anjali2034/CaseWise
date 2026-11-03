@@ -1,0 +1,9 @@
+# Development / test tools (not needed in production). Edit THIS file, then:
+#     pip-compile --generate-hashes --allow-unsafe requirements-dev.in
+# -c keeps every shared package at exactly the production version.
+-c requirements.txt
+-r requirements.in
+pytest==9.2.0
+httpx2==2.16.0     # used by FastAPI's TestClient (successor to httpx, by the same author)
+esprima==4.0.1     # parses the JavaScript inside templates to catch syntax errors
+pip-tools          # regenerates the lock files
