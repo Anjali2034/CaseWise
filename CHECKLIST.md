@@ -1,6 +1,8 @@
 # Project Checklist
 
 Tracks every fix and feature. Each item is done in its own commit.
+**Private file:** git-ignored and not pushed to GitHub.
+**Rule:** run the full test suite (`pytest`) before every commit; all tests must pass.
 
 **Legend:** `[x]` done · `[ ]` to do · `[~]` in progress · `[?]` needs a decision
 
@@ -20,6 +22,9 @@ Tracks every fix and feature. Each item is done in its own commit.
 - [x] Initialise git repo, add CHECKLIST.md, baseline commit of existing code
 - [x] Push to GitHub: https://github.com/Anjali2034/Casewise-AI
 - [ ] Add `.gitattributes` so line endings are consistent (removes the LF/CRLF warnings)
+- [x] Stop tracking CHECKLIST.md in git (kept locally, git-ignored)
+- [x] Automated test suite (pytest, 101 tests) covering every fix so far; run before every commit
+- [ ] Rename and reorganise files with clearer names (proposal pending your OK)
 - [~] Add README.md and `.env.example` (`.env.example` done; README to do)
 
 ### Security and correctness
@@ -72,7 +77,8 @@ Tracks every fix and feature. Each item is done in its own commit.
 - [ ] Choice of LLM provider (Ollama / hosted API) so the deployed version works
 - [ ] Render markdown in responses; add copy buttons
 - [ ] Enter to send, Shift+Enter for a new line
-- [ ] Tests (pytest with the LLM mocked out) and linting (ruff)
+- [x] Tests (pytest with the LLM mocked out)
+- [ ] Linting (ruff)
 - [ ] Working deployment on Render
 
 ## Phase 2: Core features
@@ -108,4 +114,6 @@ Tracks every fix and feature. Each item is done in its own commit.
 | 7 | Retry policy: 1 retry, transient errors only, never after text has been yielded; real streaming (`stream=True`); typed errors (404 returns 503 with the correct model name, timeout returns 504, stream errors no longer become an empty 200) | `721ba1a` |
 | 8 | `OLLAMA_MODEL` env var (default `llama2`); `.env` loading via python-dotenv; `.env.example`; render.yaml updated | `0dd5038` |
 | 9 | Privacy: logs record sizes, not content (no questions, prompts, chunks or PDF filenames); removed 40 debug `console.log` calls | `47af719` |
-| 10 | No raw exception text sent to users: unexpected errors return a generic 500 with an error ID (full trace logged under that ID); other Ollama errors return 502 | _(your commit)_ |
+| 10 | No raw exception text sent to users: unexpected errors return a generic 500 with an error ID (full trace logged under that ID); other Ollama errors return 502 | `ea59a43` |
+| 11 | CHECKLIST.md untracked and git-ignored | _(your commit)_ |
+| 12 | pytest suite: 101 tests (pages, health, all endpoints and error codes, retries vs a fake Ollama, privacy, XSS, JS syntax) | _(your commit)_ |

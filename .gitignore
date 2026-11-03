@@ -49,3 +49,9 @@ Thumbs.db
 
 # Claude Code local settings
 .claude/
+
+# Personal progress tracker (local only)
+CHECKLIST.md
+
+# Test cache
+.pytest_cache/
