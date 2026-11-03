@@ -49,7 +49,7 @@ LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama").strip().lower()
 OLLAMA_API_BASE = os.getenv("OLLAMA_API_BASE", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama2")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 AI_REQUESTS_PER_MINUTE = int(os.getenv("AI_REQUESTS_PER_MINUTE", "5"))
 AI_REQUESTS_PER_DAY = int(os.getenv("AI_REQUESTS_PER_DAY", "50"))
 TRUST_PROXY_HEADERS = env_flag("TRUST_PROXY_HEADERS")
@@ -121,8 +121,11 @@ def ai_rate_limit(request: Request) -> None:
         logger.info(f"Rate limit reached ({window})")
         raise HTTPException(status_code=429, detail=detail, headers={"Retry-After": str(retry_after)})
 
-# Input limits (configurable, see .env.example)
-MAX_TEXT_CHARS = int(os.getenv("MAX_TEXT_CHARS", "50000"))
+# Input limits (configurable, see .env.example).
+# Groq's free plan accepts at most 8,000 tokens per minute, and one request (document
+# + instructions + answer) has to fit in that, so its default text limit is lower.
+DEFAULT_MAX_TEXT_CHARS = {"groq": 20000, "ollama": 50000}
+MAX_TEXT_CHARS = int(os.getenv("MAX_TEXT_CHARS") or DEFAULT_MAX_TEXT_CHARS.get(LLM_PROVIDER, 50000))
 MAX_PDF_BYTES = int(float(os.getenv("MAX_PDF_MB", "10")) * 1024 * 1024)
 
 # Request models. Every text field is stripped, must be non-empty and has a max length.

@@ -87,11 +87,11 @@ Settings are read from environment variables, or from a `.env` file in the proje
 | `OLLAMA_API_BASE` | `http://localhost:11434` | Where the Ollama server is running |
 | `OLLAMA_MODEL` | `llama2` | Which Ollama model to use. It must be installed (`ollama pull <name>`) |
 | `GROQ_API_KEY` | *(empty)* | Your Groq API key. Keep it secret: put it in `.env` or your host's secret settings, never in the code |
-| `GROQ_MODEL` | `llama-3.3-70b-versatile` | Which [Groq model](https://console.groq.com/docs/models) to use |
+| `GROQ_MODEL` | `openai/gpt-oss-120b` | Which [Groq model](https://console.groq.com/docs/models) to use. gpt-oss-120b gave the most accurate legal answers in testing |
 | `AI_REQUESTS_PER_MINUTE` | `5` | Per-visitor limit on the AI tools, per minute (`0` = off) |
 | `AI_REQUESTS_PER_DAY` | `50` | Per-visitor limit on the AI tools, per day (`0` = off) |
 | `TRUST_PROXY_HEADERS` | `false` | Set to `true` behind a trusted proxy (like Render), so rate limits use the visitor's IP instead of the proxy's |
-| `MAX_TEXT_CHARS` | `50000` | Maximum characters per request (pasted text, or text extracted from a PDF) |
+| `MAX_TEXT_CHARS` | `20000` with Groq, `50000` with Ollama | Maximum characters per request (pasted text, or text extracted from a PDF). Groq's free plan allows 8,000 tokens per minute, and a request has to fit in that |
 | `MAX_PDF_MB` | `10` | Maximum PDF upload size in megabytes |
 | `ALLOWED_ORIGINS` | *(empty)* | Other websites allowed to call the API from a browser (CORS), comma-separated. Leave empty unless you host a separate frontend |
 | `PORT` | `8000` | Port used by `python main.py` |
@@ -168,5 +168,7 @@ The live site runs on [Render](https://render.com)'s free plan, using Groq for t
 2. **Turn on Zero Data Retention** in Groq's [Data Controls settings](https://console.groq.com/settings/data-controls), so Groq doesn't keep request logs even for troubleshooting.
 3. In Render, choose **New → Blueprint** and connect this GitHub repository. Render reads `render.yaml` and asks for `GROQ_API_KEY`: paste the key there. It's stored as a secret, never in the code.
 4. When the deploy finishes, open `https://<your-service>.onrender.com/health` and check for `"status": "ok"`.
+
+Groq's free plan allows **1,000 requests a day and 8,000 tokens a minute**, shared by all visitors. A typical request uses about 400-900 tokens. When the quota runs out, users see "CaseWise is very busy right now" and can retry a minute later.
 
 On the free plan, the service sleeps after about 15 minutes without visitors, and the next visit takes 30-60 seconds to wake it up. Rate limits are kept in memory, so they reset when it restarts.

@@ -50,7 +50,7 @@ class FakeGroq(BaseHTTPRequestHandler):
         type(self).last_auth = self.headers.get("Authorization")
         if self.scenario == "bad_key":
             return self._send(401, b'{"error":{"message":"Invalid API Key"}}')
-        body = json.dumps({"data": [{"id": "llama-3.3-70b-versatile"}, {"id": "openai/gpt-oss-20b"}]}).encode()
+        body = json.dumps({"data": [{"id": "openai/gpt-oss-120b"}, {"id": "openai/gpt-oss-20b"}]}).encode()
         self._send(200, body)
 
     def do_POST(self):  # /chat/completions
@@ -117,7 +117,7 @@ def test_streams_text_and_sends_an_openai_style_request(groq_url):
     text, error = run(groq_url, "ok")
     assert (text, error) == ("Hello world", None)
     body = FakeGroq.last_body
-    assert body["model"] == "llama-3.3-70b-versatile" and body["stream"] is True
+    assert body["model"] == "openai/gpt-oss-120b" and body["stream"] is True
     assert body["messages"] == [{"role": "system", "content": "system rules"}, {"role": "user", "content": "prompt"}]
     assert body["temperature"] == 0.2
     assert FakeGroq.last_auth == "Bearer test-key"
@@ -168,7 +168,7 @@ def test_unreachable_groq_is_service_unavailable():
 
 def test_health_check(groq_url):
     assert client_for(groq_url, "ok").check_health() == {
-        "provider": "groq", "model": "llama-3.3-70b-versatile", "reachable": True, "model_available": True}
+        "provider": "groq", "model": "openai/gpt-oss-120b", "reachable": True, "model_available": True}
     assert client_for(groq_url, "bad_key").check_health()["reachable"] is False
     assert oc.GroqClient(api_key="", base_url=groq_url).check_health()["reachable"] is False
 
@@ -191,6 +191,12 @@ def test_every_tool_works_through_groq(groq_url, tool, prompt):
 
 
 # ---------- provider selection in main.py ----------
+
+def test_text_limit_default_depends_on_provider():
+    """Groq's free plan: 8,000 tokens/minute, and one request must fit in that."""
+    assert main.DEFAULT_MAX_TEXT_CHARS == {"groq": 20000, "ollama": 50000}
+    assert oc.GroqClient(api_key="k").model == "openai/gpt-oss-120b"
+
 
 def test_provider_selection(monkeypatch):
     monkeypatch.setattr(main, "LLM_PROVIDER", "groq")

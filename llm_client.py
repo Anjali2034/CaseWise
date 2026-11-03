@@ -319,7 +319,7 @@ class GroqClient(LLMClient):
     provider = "groq"
     default_base_url = "https://api.groq.com/openai/v1"
 
-    def __init__(self, api_key: str, model: str = "llama-3.3-70b-versatile",
+    def __init__(self, api_key: str, model: str = "openai/gpt-oss-120b",
                  base_url: str = default_base_url):
         super().__init__(model)
         self.api_key = api_key

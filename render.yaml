@@ -12,7 +12,7 @@ services:
       - key: LLM_PROVIDER
         value: groq
       - key: GROQ_MODEL
-        value: llama-3.3-70b-versatile
+        value: openai/gpt-oss-120b
       - key: GROQ_API_KEY
         sync: false                 # secret: set it in the Render dashboard, never in this file
       - key: TRUST_PROXY_HEADERS
@@ -21,3 +21,5 @@ services:
         value: "5"
       - key: AI_REQUESTS_PER_DAY
         value: "50"
+      - key: MAX_TEXT_CHARS
+        value: "20000"              # Groq free plan: 8,000 tokens/minute, so ~20k characters per request
