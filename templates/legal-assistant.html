@@ -5,16 +5,21 @@
 
 {% block content %}
 <section class="chat-container">
-    <div class="chat-sidebar">
+    <aside class="chat-sidebar" aria-label="Your chats">
         <div class="new-chat">
-            <button id="newChatBtn" class="new-chat-btn">
-                <span class="plus-icon">+</span> New Chat
+            <button id="newChatBtn" class="new-chat-btn" type="button">
+                <span class="plus-icon" aria-hidden="true">+</span> New Chat
             </button>
         </div>
         <div class="chat-history">
-            <!-- Chat history will be populated here -->
+            <p class="chat-history-empty" id="chatHistoryEmpty">Your chats will appear here.</p>
+            <ul class="chat-history-list" id="chatHistoryList"></ul>
         </div>
-    </div>
+        <div class="chat-history-footer">
+            <p>Chats are saved only in this browser.</p>
+            <button type="button" class="chat-history-clear" id="clearChatsBtn" hidden>Delete all chats</button>
+        </div>
+    </aside>
 
     <div class="chat-main">
         <div class="chat-messages" id="chatMessages">
@@ -25,16 +30,17 @@
         </div>
 
         <div class="chat-input-container">
-            <form id="legalQuestionForm" class="chat-form">
+            <form id="legalQuestionForm" class="chat-form" data-enter-sends>
                 <div class="input-wrapper">
                     <textarea
                         id="question"
                         name="question"
-                        placeholder="Type your legal question here..."
+                        placeholder="Type your legal question here... (Enter to send, Shift+Enter for a new line)"
+                        aria-label="Your legal question"
                         rows="1"
                         autofocus></textarea>
-                    <button type="submit" class="send-button">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <button type="submit" class="send-button" aria-label="Send">
+                        <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M7 11L12 6L17 11M12 18V7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                     </button>
@@ -88,7 +94,82 @@
 .chat-history {
     flex: 1;
     overflow-y: auto;
-    padding: 1rem;
+    padding: 0.75rem;
+}
+
+.chat-history-empty {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.85rem;
+    margin: 0.25rem;
+}
+
+.chat-history-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.chat-history-item {
+    display: flex;
+    align-items: center;
+    border-radius: 6px;
+}
+
+.chat-history-item:hover,
+.chat-history-item.active {
+    background-color: rgba(255, 255, 255, 0.07);
+}
+
+.chat-history-open {
+    flex: 1;
+    min-width: 0;
+    background: none;
+    border: none;
+    color: var(--text-color);
+    text-align: left;
+    padding: 0.55rem 0.6rem;
+    font-size: 0.88rem;
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chat-history-delete {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.45);
+    padding: 0.4rem 0.6rem;
+    font-size: 1.05rem;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.chat-history-delete:hover,
+.chat-history-delete:focus-visible {
+    color: #ff6b6b;
+}
+
+.chat-history-footer {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.chat-history-footer p {
+    margin: 0 0 0.4rem;
+}
+
+.chat-history-clear {
+    background: none;
+    border: none;
+    padding: 0;
+    color: rgba(255, 255, 255, 0.6);
+    text-decoration: underline;
+    font-size: 0.78rem;
+    cursor: pointer;
 }
 
 .message {
@@ -136,6 +217,125 @@ document.addEventListener('DOMContentLoaded', function() {
     const textarea = document.getElementById('question');
     const chatMessages = document.getElementById('chatMessages');
     const newChatBtn = document.getElementById('newChatBtn');
+    const historyList = document.getElementById('chatHistoryList');
+    const historyEmpty = document.getElementById('chatHistoryEmpty');
+    const clearChatsBtn = document.getElementById('clearChatsBtn');
+
+    // ---------- Saved chats: kept only in this browser (localStorage) ----------
+    // Each chat: { id, title, updated, messages: [{ role: 'user' | 'assistant', content }] }
+    const STORE_KEY = 'casewise.chats.v1';
+    const MAX_CHATS = 30;
+    const MAX_TURNS_SENT = 20;   // earlier messages sent with each question (the server's limit)
+
+    function loadChats() {
+        try {
+            const chats = JSON.parse(localStorage.getItem(STORE_KEY) || '[]');
+            return Array.isArray(chats) ? chats : [];
+        } catch (e) {
+            return [];   // storage blocked (e.g. private mode) or damaged: start empty
+        }
+    }
+
+    function saveChats() {
+        try {
+            localStorage.setItem(STORE_KEY, JSON.stringify(chats.slice(0, MAX_CHATS)));
+        } catch (e) {
+            // Storage full or blocked: the chat still works, it just isn't saved.
+        }
+    }
+
+    let chats = loadChats();
+    let current = null;   // the open chat, or null for a new one
+
+    function renderHistory() {
+        historyList.replaceChildren();
+        chats.forEach((chat) => {
+            const item = document.createElement('li');
+            item.className = 'chat-history-item' + (current && chat.id === current.id ? ' active' : '');
+
+            const open = document.createElement('button');
+            open.type = 'button';
+            open.className = 'chat-history-open';
+            open.textContent = chat.title;
+            open.title = chat.title;
+            if (current && chat.id === current.id) open.setAttribute('aria-current', 'true');
+            open.addEventListener('click', () => openChat(chat.id));
+
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'chat-history-delete';
+            remove.textContent = '×';
+            remove.setAttribute('aria-label', `Delete chat: ${chat.title}`);
+            remove.addEventListener('click', () => deleteChat(chat.id));
+
+            item.append(open, remove);
+            historyList.append(item);
+        });
+        historyEmpty.hidden = chats.length > 0;
+        clearChatsBtn.hidden = chats.length === 0;
+    }
+
+    function clearMessages() {
+        chatMessages.querySelectorAll('.message').forEach((msg) => msg.remove());
+    }
+
+    function openChat(id) {
+        const chat = chats.find((c) => c.id === id);
+        if (!chat) return;
+        current = chat;
+        clearMessages();
+        chat.messages.forEach((m) => {
+            if (m.role === 'user') {
+                addMessage('user', m.content);
+            } else {
+                showAnswer(addMessage('assistant', ''), m.content);
+            }
+        });
+        renderHistory();
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        textarea.focus();
+    }
+
+    function startNewChat() {
+        current = null;
+        clearMessages();
+        renderHistory();
+        textarea.focus();
+    }
+
+    function deleteChat(id) {
+        const chat = chats.find((c) => c.id === id);
+        if (!chat || !confirm(`Delete this chat?\n\n"${chat.title}"`)) return;
+        chats = chats.filter((c) => c.id !== id);
+        saveChats();
+        if (current && current.id === id) startNewChat(); else renderHistory();
+    }
+
+    function rememberTurn(question, answerText) {
+        if (!current) {
+            current = {
+                id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+                title: question.length > 60 ? question.slice(0, 57) + '...' : question,
+                messages: [],
+            };
+        }
+        current.messages.push({ role: 'user', content: question }, { role: 'assistant', content: answerText });
+        current.updated = Date.now();
+        chats = [current, ...chats.filter((c) => c.id !== current.id)];   // most recent first
+        saveChats();
+        renderHistory();
+    }
+
+    newChatBtn.addEventListener('click', startNewChat);
+    clearChatsBtn.addEventListener('click', () => {
+        if (!confirm('Delete all saved chats from this browser?')) return;
+        chats = [];
+        saveChats();
+        startNewChat();
+    });
+    renderHistory();
+
+    // ---------- Asking a question ----------
 
     // Auto-resize textarea
     textarea.addEventListener('input', function() {
@@ -143,21 +343,19 @@ document.addEventListener('DOMContentLoaded', function() {
         this.style.height = (this.scrollHeight) + 'px';
     });
 
-    // Handle form submission
     form.addEventListener('submit', whileBusy(async function(e) {
         e.preventDefault();
 
         const question = textarea.value.trim();
         if (!question) return;
 
-        // Add user message
-        addMessage('user', question);
+        // The conversation so far, so follow-up questions have context
+        const history = current ? current.messages.slice(-MAX_TURNS_SENT) : [];
 
-        // Clear input
+        addMessage('user', question);
         textarea.value = '';
         textarea.style.height = 'auto';
 
-        // Show loading state
         const loadingId = 'loading-' + Date.now();
         addLoadingMessage(loadingId);
         chatMessages.scrollTop = chatMessages.scrollHeight;  // keep the "Thinking..." bubble in view
@@ -169,14 +367,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const scrollToBottom = () => { chatMessages.scrollTop = chatMessages.scrollHeight; };
 
         try {
-            await streamInto(answer, '/legal-assistant/stream', {
+            const answerText = await streamInto(answer, '/legal-assistant/stream', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ question }),
+                body: JSON.stringify({ question, history }),
             }, {
                 onFirstText: () => { removeLoadingMessage(loadingId); answerBubble.hidden = false; },
                 onUpdate: scrollToBottom,
             });
+            addResultActions(answer.querySelector('.markdown'), { download: false });
+            rememberTurn(question, answerText);
         } catch (error) {
             console.error('Error:', error);
             removeLoadingMessage(loadingId);
@@ -186,16 +386,17 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!textarea.value) textarea.value = question;
         }
 
-        // Scroll to bottom
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        scrollToBottom();
     }));
 
-    // New chat button
-    newChatBtn.addEventListener('click', function() {
-        // Remove all messages except welcome
-        const messages = chatMessages.querySelectorAll('.message');
-        messages.forEach(msg => msg.remove());
-    });
+    // A saved answer: formatted, with a Copy button
+    function showAnswer(textDiv, markdownText) {
+        const output = document.createElement('div');
+        output.className = 'markdown';
+        output.innerHTML = renderMarkdown(markdownText);
+        textDiv.replaceChildren(output);
+        addResultActions(output, { download: false });
+    }
 
     function addMessage(role, content) {
         const messageDiv = document.createElement('div');

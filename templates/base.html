@@ -131,6 +131,81 @@
             return text;
         }
 
+        // Copy / Download buttons under a finished result.
+        // Copy puts formatted HTML on the clipboard (so it pastes nicely into Word or
+        // Google Docs) with plain text as the fallback. Download saves a .txt file.
+        function addResultActions(result, { name = 'result', download = true } = {}) {
+            const bar = document.createElement('div');
+            bar.className = 'result-actions';
+            const status = document.createElement('span');
+            status.className = 'result-actions-status';
+            status.setAttribute('aria-live', 'polite');
+            const flash = (message) => {
+                status.textContent = message;
+                setTimeout(() => { status.textContent = ''; }, 2000);
+            };
+            const button = (label, onClick) => {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'result-action';
+                b.textContent = label;
+                b.addEventListener('click', onClick);
+                bar.append(b);
+            };
+
+            button('Copy', async () => {
+                const text = result.innerText.trim();
+                try {
+                    if (window.ClipboardItem && navigator.clipboard.write) {
+                        await navigator.clipboard.write([new ClipboardItem({
+                            'text/html': new Blob([result.innerHTML], { type: 'text/html' }),
+                            'text/plain': new Blob([text], { type: 'text/plain' }),
+                        })]);
+                    } else {
+                        await navigator.clipboard.writeText(text);
+                    }
+                    flash('Copied');
+                } catch (e) {
+                    flash('Could not copy');
+                }
+            });
+            if (download) {
+                button('Download', () => {
+                    // The user's local date (toISOString would give UTC: yesterday's date
+                    // for Indian users until 5:30 am)
+                    const d = new Date();
+                    const today = [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'),
+                                   String(d.getDate()).padStart(2, '0')].join('-');
+                    const body = result.innerText.trim() + '\n\n---\nCreated with CaseWise on ' + today +
+                        '. Not legal advice: have a qualified lawyer review anything important.\n';
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(new Blob([body], { type: 'text/plain;charset=utf-8' }));
+                    link.download = `casewise-${name}-${today}.txt`;
+                    link.click();
+                    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+                    flash('Downloaded');
+                });
+            }
+            bar.append(status);
+            result.after(bar);
+            return bar;
+        }
+
+        // Keyboard sending. Ctrl/Cmd+Enter sends on every tool. Plain Enter sends only
+        // where the form has data-enter-sends (the chat): on the document tools people
+        // paste multi-line text and need Enter for new lines. Shift+Enter is always a
+        // new line, and keys are ignored while an input method (e.g. Hindi) is composing.
+        document.querySelectorAll('.chat-form textarea').forEach((textarea) => {
+            const plainEnter = textarea.form && textarea.form.hasAttribute('data-enter-sends');
+            textarea.addEventListener('keydown', (e) => {
+                if (e.key !== 'Enter' || e.isComposing || e.keyCode === 229 || e.shiftKey) return;
+                if (e.ctrlKey || e.metaKey || plainEnter) {
+                    e.preventDefault();
+                    textarea.form.requestSubmit();
+                }
+            });
+        });
+
         // Escape text before inserting it into HTML via innerHTML.
         // LLM output and error messages must ALWAYS go through this to prevent XSS.
         function escapeHtml(value) {

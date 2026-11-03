@@ -17,7 +17,7 @@ CaseWise is an AI legal document assistant. It helps you understand, draft and r
 ## Privacy
 
 - **Your choice of AI:** locally, CaseWise talks to [Ollama](https://ollama.com) on your own computer, so documents never leave it. The live site uses [Groq](https://groq.com), whose [terms](https://console.groq.com/docs/legal/services-agreement) say it doesn't train on API inputs or outputs and [doesn't keep them by default](https://console.groq.com/docs/your-data).
-- **Nothing is stored:** there is no database. Uploaded documents are processed in memory.
+- **Nothing stored on the server:** there is no database. Uploaded documents are processed in memory. Legal Assistant chats are saved only in the user's own browser (`localStorage`), where they can be deleted.
 - **Nothing sensitive in the logs:** server logs record sizes ("212 chars"), never the text of questions, documents or file names.
 
 ## Requirements
@@ -86,6 +86,7 @@ Settings are read from environment variables, or from a `.env` file in the proje
 | `LLM_PROVIDER` | `ollama` | `ollama` (local) or `groq` (hosted) |
 | `OLLAMA_API_BASE` | `http://localhost:11434` | Where the Ollama server is running |
 | `OLLAMA_MODEL` | `llama2` | Which Ollama model to use. It must be installed (`ollama pull <name>`) |
+| `OLLAMA_NUM_CTX` | `4096` | The Ollama model's context window in tokens. Text that won't fit is refused with a clear message instead of being silently cut off. Raise it for newer models (e.g. `32768` for llama3.1) |
 | `GROQ_API_KEY` | *(empty)* | Your Groq API key. Keep it secret: put it in `.env` or your host's secret settings, never in the code |
 | `GROQ_MODEL` | `openai/gpt-oss-120b` | Which [Groq model](https://console.groq.com/docs/models) to use. gpt-oss-120b gave the most accurate legal answers in testing |
 | `AI_REQUESTS_PER_MINUTE` | `5` | Per-visitor limit on the AI tools, per minute (`0` = off) |
@@ -111,7 +112,7 @@ The pages call these endpoints, and you can call them directly too. Interactive 
 
 | Method | Path | Body | Returns |
 |---|---|---|---|
-| `POST` | `/legal-assistant` | `{"question": "..."}` | `{"response": "..."}` |
+| `POST` | `/legal-assistant` | `{"question": "...", "history": [{"role": "user", "content": "..."}, {"role": "assistant", "content": "..."}]}`. `history` is optional: the earlier conversation (up to 20 messages), so follow-up questions work | `{"response": "..."}` |
 | `POST` | `/generate-document` | `{"prompt": "..."}` | `{"response": "..."}` |
 | `POST` | `/analyze-contract` | `{"contract_text": "..."}` | `{"key_clauses": [...], "potential_risks": [...], "summary": "..."}` |
 | `POST` | `/check-compliance` | `{"legal_text": "..."}` | `{"missing_clauses": [...], "compliance_issues": [...], "recommendations": [...], "summary": "..."}` |

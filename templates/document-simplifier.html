@@ -72,6 +72,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 method: 'POST',
                 body: formData
             }, { onFirstText: () => { loadingIndicator.style.display = 'none'; } });
+            addResultActions(responseArea.querySelector('.markdown'), { name: 'simplified' });
 
             // Clear the file input
             pdfUpload.value = '';
@@ -104,6 +105,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ legal_text: legalText })
             }, { onFirstText: () => { loadingIndicator.style.display = 'none'; } });
+            addResultActions(responseArea.querySelector('.markdown'), { name: 'simplified' });
 
         } catch (error) {
             console.error('Error:', error);

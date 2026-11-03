@@ -5,8 +5,8 @@ from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, StreamingResponse
-from pydantic import BaseModel, StringConstraints
-from typing import Annotated
+from pydantic import BaseModel, Field, StringConstraints
+from typing import Annotated, List, Literal
 from llm_client import (
     DocumentTooLongError,
     GroqClient,
@@ -49,6 +49,7 @@ ALLOWED_ORIGINS = parse_origins(os.getenv("ALLOWED_ORIGINS", ""))
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama").strip().lower()
 OLLAMA_API_BASE = os.getenv("OLLAMA_API_BASE", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama2")
+OLLAMA_NUM_CTX = int(os.getenv("OLLAMA_NUM_CTX", "4096"))
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 AI_REQUESTS_PER_MINUTE = int(os.getenv("AI_REQUESTS_PER_MINUTE", "5"))
@@ -85,7 +86,7 @@ if ALLOWED_ORIGINS:
 def make_llm_client():
     """The AI provider: local Ollama (default, private) or hosted Groq (the live site)."""
     if LLM_PROVIDER == "ollama":
-        return OllamaClient(base_url=OLLAMA_API_BASE, model=OLLAMA_MODEL)
+        return OllamaClient(base_url=OLLAMA_API_BASE, model=OLLAMA_MODEL, num_ctx=OLLAMA_NUM_CTX)
     if LLM_PROVIDER == "groq":
         return GroqClient(api_key=GROQ_API_KEY, model=GROQ_MODEL)
     raise ValueError(f"Unknown LLM_PROVIDER '{LLM_PROVIDER}'. Use 'ollama' or 'groq'.")
@@ -132,8 +133,35 @@ MAX_PDF_BYTES = int(float(os.getenv("MAX_PDF_MB", "10")) * 1024 * 1024)
 # Request models. Every text field is stripped, must be non-empty and has a max length.
 InputText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=MAX_TEXT_CHARS)]
 
+MAX_HISTORY_TURNS = 20
+
+
+class ChatTurn(BaseModel):
+    """One earlier message in a Legal Assistant conversation."""
+    role: Literal["user", "assistant"]
+    content: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=MAX_TEXT_CHARS)]
+
+
 class Question(BaseModel):
     question: InputText
+    # The conversation so far (oldest first), so follow-up questions have context.
+    # The browser keeps it; the server stores nothing.
+    history: List[ChatTurn] = Field(default_factory=list, max_length=MAX_HISTORY_TURNS)
+
+
+def fit_history(history: List[ChatTurn], question: str) -> List[dict]:
+    """The most recent turns that fit, with the question, in MAX_TEXT_CHARS.
+
+    Older turns are dropped first: they matter least for a follow-up question.
+    """
+    budget = MAX_TEXT_CHARS - len(question)
+    kept = []
+    for turn in reversed(history):
+        if len(turn.content) > budget:
+            break
+        budget -= len(turn.content)
+        kept.append({"role": turn.role, "content": turn.content})
+    return list(reversed(kept))
 
 class DocumentRequest(BaseModel):
     prompt: InputText
@@ -320,8 +348,9 @@ def stream_tool(name: str, task, text: str) -> StreamingResponse:
 
 @app.post("/legal-assistant/stream", dependencies=[Depends(ai_rate_limit)])
 def legal_assistant_stream(question: Question):
-    logger.info(f"Legal assistant (stream) request received ({len(question.question)} chars)")
-    return stream_tool("Legal assistant", llm.legal_assistant_stream, question.question)
+    history = fit_history(question.history, question.question)
+    logger.info(f"Legal assistant (stream) request received ({len(question.question)} chars, {len(history)} earlier turns)")
+    return stream_tool("Legal assistant", lambda q: llm.legal_assistant_stream(q, history), question.question)
 
 @app.post("/generate-document/stream", dependencies=[Depends(ai_rate_limit)])
 def generate_document_stream(request: DocumentRequest):
@@ -344,7 +373,8 @@ def simplify_document_pdf_stream(file: UploadFile = File(...)):
 @app.post("/legal-assistant", dependencies=[Depends(ai_rate_limit)])
 def legal_assistant(question: Question):
     logger.info(f"Legal assistant request received ({len(question.question)} chars)")
-    return {"response": run_tool("Legal assistant", llm.legal_assistant, question.question)}
+    history = fit_history(question.history, question.question)
+    return {"response": run_tool("Legal assistant", lambda q: llm.legal_assistant(q, history), question.question)}
 
 @app.post("/generate-document", dependencies=[Depends(ai_rate_limit)])
 def generate_document(request: DocumentRequest):

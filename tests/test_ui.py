@@ -247,9 +247,9 @@ def test_shared_rules_are_defined_once_in_styles_css(selector):
 def test_legal_assistant_only_keeps_its_own_components():
     css = Path("templates/legal-assistant.html").read_text(encoding="utf-8").split("{% block extra_css %}")[1].split("{% endblock %}")[0]
     selectors = {s.strip() for s in re.findall(r"(?m)^([.\w][^{\n]*) \{", css)}
-    assert selectors <= {".chat-sidebar", ".new-chat", ".new-chat-btn", ".new-chat-btn:hover", ".plus-icon",
-                         ".chat-history", ".message", ".message.user", ".message.assistant", ".message-content",
-                         ".message-text"}, selectors
+    own = {".chat-sidebar", ".new-chat", ".new-chat-btn", ".new-chat-btn:hover", ".plus-icon",
+           ".message", ".message.user", ".message.assistant", ".message-content", ".message-text"}
+    assert all(sel in own or sel.startswith(".chat-history") for sel in selectors), selectors
 
 
 @pytest.mark.parametrize("template, old", [("contract-analyzer.html", "analysis-"), ("compliance-checker.html", "compliance-")])

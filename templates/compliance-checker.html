@@ -83,6 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Display the response
             responseArea.innerHTML = formatComplianceResponse(data);
+            addResultActions(responseArea.firstElementChild, { name: 'compliance-check' });
 
             // Clear the file input
             pdfUpload.value = '';
@@ -127,6 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Display the response
             responseArea.innerHTML = formatComplianceResponse(data);
+            addResultActions(responseArea.firstElementChild, { name: 'compliance-check' });
 
         } catch (error) {
             console.error('Error occurred:', error);

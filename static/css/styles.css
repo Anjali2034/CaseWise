@@ -192,6 +192,38 @@ button {
     pointer-events: none;
 }
 
+/* Copy / Download buttons under a finished result (addResultActions in base.html) */
+.result-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.9rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.result-action {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.result-action:hover,
+.result-action:focus-visible {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: var(--primary-color);
+}
+
+.result-actions-status {
+    font-size: 0.8rem;
+    color: var(--primary-color);
+}
+
 /* Only show the result box once there is a result (or an error) in it */
 .response-area:empty {
     display: none;

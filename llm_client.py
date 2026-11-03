@@ -11,7 +11,10 @@ import json
 import logging
 import re
 import time
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
+
+# Earlier turns of a conversation, oldest first: [{"role": "user" | "assistant", "content": "..."}]
+History = Optional[List[Dict[str, str]]]
 
 import requests
 
@@ -82,10 +85,12 @@ class LLMClient:
 
     # -- provider-specific parts --
 
-    def _request(self, prompt: str, system_prompt: str, json_mode: bool = False) -> Tuple[str, Dict[str, Any], Dict[str, str]]:
+    def _request(self, prompt: str, system_prompt: str, json_mode: bool = False,
+                 history: History = None) -> Tuple[str, Dict[str, Any], Dict[str, str]]:
         """Return (url, json_body, headers) for a streaming generation request.
 
         json_mode asks the provider to guarantee the answer is a valid JSON object.
+        history is the earlier conversation, so follow-up questions have context.
         """
         raise NotImplementedError
 
@@ -125,14 +130,15 @@ class LLMClient:
         self._health_cache = (now, result)
         return result
 
-    def _generate_stream(self, prompt: str, system_prompt: Optional[str] = None, json_mode: bool = False):
+    def _generate_stream(self, prompt: str, system_prompt: Optional[str] = None, json_mode: bool = False,
+                         history: History = None):
         """Stream text chunks from the model.
 
         Retry policy: only transient failures (connection errors, 5xx) are retried,
         only once, and only before any text has been yielded, so partial output is
         never duplicated. Timeouts and 4xx errors fail immediately.
         """
-        url, body, headers = self._request(prompt, system_prompt, json_mode)
+        url, body, headers = self._request(prompt, system_prompt, json_mode, history)
         attempt = 0
         yielded_any = False
 
@@ -188,9 +194,12 @@ class LLMClient:
     # The three text tools come in two forms: one returns the whole answer, the
     # *_stream one yields it piece by piece as the model writes it.
 
-    def legal_assistant_stream(self, question: str):
-        """Answer a legal question with general information (not legal advice)."""
-        return self._generate_stream(question, prompts.LEGAL_ASSISTANT)
+    def legal_assistant_stream(self, question: str, history: History = None):
+        """Answer a legal question with general information (not legal advice).
+
+        `history` (earlier turns of the chat) lets follow-up questions refer back.
+        """
+        return self._generate_stream(question, prompts.LEGAL_ASSISTANT, history=history)
 
     def generate_document_stream(self, prompt: str):
         """Draft a legal document based on the user's description."""
@@ -200,8 +209,8 @@ class LLMClient:
         """Rewrite legal text in plain English."""
         return self._generate_stream(f"Simplify this legal text:\n\n{legal_text}", prompts.DOCUMENT_SIMPLIFIER)
 
-    def legal_assistant(self, question: str) -> str:
-        return "".join(self.legal_assistant_stream(question))
+    def legal_assistant(self, question: str, history: History = None) -> str:
+        return "".join(self.legal_assistant_stream(question, history))
 
     def generate_document(self, prompt: str) -> str:
         return "".join(self.generate_document_stream(prompt))
@@ -270,6 +279,15 @@ def _parse_json_object(text: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+def estimate_tokens(text: str) -> int:
+    """Rough token count: English text averages about 4 characters per token.
+
+    Deliberately an overestimate for typical legal text, so a "too long" check errs
+    on the side of refusing rather than letting the model silently cut text off.
+    """
+    return len(text) // 3 + 1
+
+
 def _retry_after_seconds(response: requests.Response) -> Optional[int]:
     try:
         return max(1, int(float(response.headers.get("retry-after", ""))))
@@ -283,13 +301,25 @@ class OllamaClient(LLMClient):
     """A local Ollama server. Free and private: documents never leave your machine."""
     provider = "ollama"
 
-    def __init__(self, base_url: str = "http://localhost:11434", model: str = "llama2"):
+    def __init__(self, base_url: str = "http://localhost:11434", model: str = "llama2", num_ctx: int = 4096):
         super().__init__(model)
         self.base_url = base_url
+        # Context window in tokens. Ollama silently drops whatever doesn't fit, so
+        # requests that clearly won't fit are refused up front instead (see below).
+        self.num_ctx = num_ctx
+        self.answer_reserve_tokens = 1024   # room left for the answer itself
 
-    def _request(self, prompt, system_prompt, json_mode=False):
+    def _request(self, prompt, system_prompt, json_mode=False, history=None):
+        if history:
+            earlier = "\n\n".join(f"{'User' if turn['role'] == 'user' else 'Assistant'}: {turn['content']}"
+                                   for turn in history)
+            prompt = f"Earlier in this conversation:\n\n{earlier}\n\nNew question: {prompt}"
+        needed = estimate_tokens((system_prompt or "") + prompt)
+        if needed > self.num_ctx - self.answer_reserve_tokens:
+            raise DocumentTooLongError(
+                f"About {needed} tokens; the model's context is {self.num_ctx} (OLLAMA_NUM_CTX)")
         body = {"model": self.model, "prompt": prompt, "system": system_prompt, "stream": True,
-                "options": {"temperature": self.temperature}}
+                "options": {"temperature": self.temperature, "num_ctx": self.num_ctx}}
         if json_mode:
             body["format"] = "json"
         return f"{self.base_url}/api/generate", body, {}
@@ -344,8 +374,9 @@ class GroqClient(LLMClient):
     def _headers(self):
         return {"Authorization": f"Bearer {self.api_key}"}
 
-    def _request(self, prompt, system_prompt, json_mode=False):
+    def _request(self, prompt, system_prompt, json_mode=False, history=None):
         messages = ([{"role": "system", "content": system_prompt}] if system_prompt else []) + \
+                   [{"role": turn["role"], "content": turn["content"]} for turn in (history or [])] + \
                    [{"role": "user", "content": prompt}]
         body = {"model": self.model, "messages": messages, "stream": True, "temperature": self.temperature}
         if json_mode:

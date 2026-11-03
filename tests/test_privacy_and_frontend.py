@@ -41,7 +41,9 @@ def test_no_console_log_of_user_data(template):
     assert "console.log" not in template.read_text(encoding="utf-8")
 
 
-SAFE_LINE_MARKERS = ("textContent", "className", "new Error", "addMessage(")
+# DOM APIs that always treat a string as plain text, never as HTML
+SAFE_LINE_MARKERS = ("textContent", "className", "new Error", "addMessage(",
+                     "setAttribute(", ".download =", "confirm(")
 
 
 @pytest.mark.parametrize("template", TEMPLATES, ids=lambda p: p.name)

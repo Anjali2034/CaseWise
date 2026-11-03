@@ -98,7 +98,7 @@ def test_text_exactly_at_the_limit_is_accepted(client, llm_reply, endpoint, key)
 def test_surrounding_whitespace_is_stripped_before_reaching_the_model(client, llm_reply):
     seen = {}
     with mock.patch.object(main.llm, "_generate_stream",
-                           side_effect=lambda prompt, system=None: (seen.setdefault("p", prompt), iter(["ok"]))[1]):
+                           side_effect=lambda prompt, system=None, **kw: (seen.setdefault("p", prompt), iter(["ok"]))[1]):
         client.post("/legal-assistant", json={"question": "  What is a lease?  \n"})
     assert seen["p"] == "What is a lease?"
 

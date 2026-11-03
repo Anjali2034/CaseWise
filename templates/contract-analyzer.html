@@ -130,6 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Display the formatted response
             responseArea.innerHTML = formatAnalysisResponse(data);
+            addResultActions(responseArea.firstElementChild, { name: 'contract-analysis' });
 
             // Clear the file input
             pdfUpload.value = '';
@@ -174,6 +175,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Display the formatted response
             responseArea.innerHTML = formatAnalysisResponse(data);
+            addResultActions(responseArea.firstElementChild, { name: 'contract-analysis' });
 
         } catch (error) {
             console.error('Error occurred:', error);
