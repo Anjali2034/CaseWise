@@ -67,7 +67,7 @@ def make_text_pdf(text: str) -> bytes:
 
 
 def make_blank_pdf() -> bytes:
-    from PyPDF2 import PdfWriter
+    from pypdf import PdfWriter
     buf = io.BytesIO()
     writer = PdfWriter()
     writer.add_blank_page(100, 100)

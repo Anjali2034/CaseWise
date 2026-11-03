@@ -128,7 +128,7 @@ def test_pdf_whose_text_exceeds_text_limit_is_413(client, endpoint, monkeypatch)
 
 
 def test_non_pdf_renamed_to_pdf_is_rejected_before_parsing(client):
-    with mock.patch("main.PyPDF2.PdfReader") as reader:
+    with mock.patch("main.PdfReader") as reader:
         r = client.post("/analyze-contract-pdf",
                         files={"file": ("contract.pdf", b"MZ\x90\x00 an .exe renamed", "application/pdf")})
     assert r.status_code == 400

@@ -20,7 +20,7 @@ import traceback
 import logging
 import uuid
 import os
-import PyPDF2
+from pypdf import PdfReader
 import io
 
 # Configure logging
@@ -163,7 +163,7 @@ def extract_pdf_text(file: UploadFile) -> str:
     if not data.lstrip()[:5] == b"%PDF-":
         raise HTTPException(status_code=400, detail="The uploaded file is not a valid PDF")
     try:
-        reader = PyPDF2.PdfReader(io.BytesIO(data))
+        reader = PdfReader(io.BytesIO(data))
         text = "".join((page.extract_text() or "") for page in reader.pages)
     except Exception as e:
         logger.warning(f"Could not read uploaded PDF: {type(e).__name__}")
@@ -187,27 +187,27 @@ def health():
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    return templates.TemplateResponse("home.html", {"request": request})
+    return templates.TemplateResponse(request, "home.html")
 
 @app.get("/legal-assistant", response_class=HTMLResponse)
 async def legal_assistant_page(request: Request):
-    return templates.TemplateResponse("legal-assistant.html", {"request": request})
+    return templates.TemplateResponse(request, "legal-assistant.html")
 
 @app.get("/document-generator", response_class=HTMLResponse)
 async def document_generator_page(request: Request):
-    return templates.TemplateResponse("document-generator.html", {"request": request})
+    return templates.TemplateResponse(request, "document-generator.html")
 
 @app.get("/contract-analyzer", response_class=HTMLResponse)
 async def contract_analyzer_page(request: Request):
-    return templates.TemplateResponse("contract-analyzer.html", {"request": request})
+    return templates.TemplateResponse(request, "contract-analyzer.html")
 
 @app.get("/compliance-checker", response_class=HTMLResponse)
 async def compliance_checker_page(request: Request):
-    return templates.TemplateResponse("compliance-checker.html", {"request": request})
+    return templates.TemplateResponse(request, "compliance-checker.html")
 
 @app.get("/document-simplifier", response_class=HTMLResponse)
 async def document_simplifier_page(request: Request):
-    return templates.TemplateResponse("document-simplifier.html", {"request": request})
+    return templates.TemplateResponse(request, "document-simplifier.html")
 
 @app.post("/legal-assistant")
 def legal_assistant(question: Question):
