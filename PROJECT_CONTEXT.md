@@ -2,7 +2,7 @@
 
 > **For an AI assistant (or developer) picking this project up.** Read this file first. It explains what CaseWise is, how the owner wants work done, what is finished, what remains, how to deploy, and the facts and pitfalls already discovered, so you don't have to rediscover them.
 >
-> **Last updated:** 2026-11-04 · **Latest commit:** the L3 + L13 commit, right after `0a57f85` · **Commits:** 41 · **Tests:** 643 passing
+> **Last updated:** 2026-11-04 · **Latest commit:** `86193a2` · **Commits:** 41 · **Tests:** 643 passing
 >
 > Keep this file current: update it whenever a milestone is finished, a decision is made, or a new fact is learned.
 
@@ -22,11 +22,11 @@ CaseWise is a web app that helps people in **India** understand and draft legal 
 
 It gives **general legal information, not legal advice**. That is stated on every page and in every AI prompt.
 
-**Stack:** Python 3.13 · FastAPI · Jinja2 templates · vanilla JavaScript (no build step) · AI via **Groq** (hosted, live site) or **Ollama** (local) · hosting planned on **Render** (free plan).
+**Stack:** Python 3.13 · FastAPI · Jinja2 templates · vanilla JavaScript (no build step) · AI via **Groq** (hosted, live site) or **Ollama** (local) · hosted on **Render** (free plan).
 
-**Repository:** https://github.com/Anjali2034/Casewise-AI (branch `main`).
+**Repository:** https://github.com/Anjali2034/CaseWise (branch `main`). The old name, `Casewise-AI`, redirects here.
 
-**Current status:** all launch code is done. **Not yet deployed** (L14). The owner still has to choose the public contact email. See [section 9](#9-what-remains).
+**Current status:** **live at https://casewise-youo.onrender.com** (Render free plan, deployed from `86193a2`). Automated live checks passed; the owner's real-phone and rate-limit checks remain (section 9.1). The contact email and lawyer review are deliberately put off (see section 9.1). See [section 9](#9-what-remains).
 
 ---
 
@@ -234,12 +234,12 @@ The owner's `.env` already has `LLM_PROVIDER=groq` and a working `GROQ_API_KEY` 
   - Single-scroll tool pages and a phone chats panel.
   - Current-page marker in the navbar, focus rings, fade-in that respects reduced motion.
   - WCAG AA contrast tested.
-- **Group 5 (the commit after `0a57f85`): L3, L13.**
+- **Group 5 (`86193a2`): L3, L13.**
   - Privacy Policy and Terms of Use, with a footer and a short notice on each tool saying where text goes.
   - Page descriptions and link previews (Open Graph, Twitter, a 1200x630 image).
   - Designed 404/500 pages for browsers; API clients still get JSON.
   - Security headers with a strict nonce-based CSP. Checked in Chrome with live Groq: 0 violations on all pages and tools, and injected scripts, styles and outside images were all blocked.
-  - Not done: the owner hasn't chosen a contact email, and no lawyer has reviewed the policies.
+  - Put off by the owner: the contact email and a lawyer review.
 
 **Live-verified with Groq:** all five tools answer in about 1–2.5 s; streaming shows first words in about 1 s; JSON mode returned 6/6 valid; memory follow-ups work; PDF upload works; the key never appears in logs.
 
@@ -249,9 +249,9 @@ The owner's `.env` already has `LLM_PROVIDER=groq` and a working `GROQ_API_KEY` 
 
 ### 9.1 Necessary before going live (in this order)
 
-**Before L14:** the owner chooses the public contact email for `CONTACT_EMAIL`. Don't publish a personal address without asking. Recommend a lawyer review of `/privacy` and `/terms` before a wide launch.
+**Put off by the owner (2026-11-04), not blocking the deploy:** the owner has no public email yet, and CaseWise is a project for now. The pages say contact details are coming, and the server logs a warning. Before promoting the site widely: set `CONTACT_EMAIL` in Render's Environment tab (no code change; don't publish a personal address without asking), and have a lawyer review `/privacy` and `/terms`.
 
-**L14: Deploy to Render and verify live.** See [section 10](#10-deploy-process-render), then:
+**L14: Deploy to Render and verify live.** Deployed 2026-11-04. Passed on the live site: `/health` ok; all pages, assets, security headers and HTTPS redirect; all five tools by text; three PDF tools; streaming (first words in 1.4 s); bad-input errors; no CSP violations or sideways scrolling in Chrome (desktop, and the home page at phone size); a limit of 5 a minute; faked `X-Forwarded-For` and `True-Client-IP` don't bypass it, and Cloudflare answers a faked `CF-Connecting-IP` with 403. **Still open from the list below:** that two different networks get separate limits, the wake-up after sleep, a real phone, and the WhatsApp preview. Original checklist:
 - Open `/health` → `"status":"ok"`, `"provider":"groq"`.
 - Run every tool once on the live URL (text and PDF).
 - **Confirm which IP header Render sends.** `rate_limit.client_key()` prefers `True-Client-IP` / `CF-Connecting-IP`, otherwise the **last** `X-Forwarded-For` entry. Community reports say Render appends to client-sent X-Forwarded-For (not officially documented). Check by temporarily logging which of these headers are present (names only, never values in permanent logs), or test from two different networks or devices that limits are separate, and confirm a spoofed `X-Forwarded-For` doesn't bypass the limit. Remove any temporary logging afterwards.
@@ -304,8 +304,8 @@ The service is fully described in **`render.yaml`**: web service `casewise`, `ru
 **First deploy:**
 1. Make sure everything is committed and pushed to `main` on GitHub, and that `pytest` passes.
 2. **Groq:** the owner already has an account and a key, with **Global ZDR enabled** (console.groq.com → Settings → Data Controls). Consider creating a **separate key** just for production (console.groq.com/keys), so the local and live keys can be revoked independently.
-3. **Render:** sign in at render.com with GitHub → **New → Blueprint** → choose the `Casewise-AI` repository → Render reads `render.yaml`.
-4. When Render asks for **`GROQ_API_KEY`** and **`CONTACT_EMAIL`**, paste the key and the email the owner chose. Render only asks for `sync: false` values when the Blueprint is first created; later changes go in the service's **Environment** tab.
+3. **Render:** sign in at render.com with GitHub → **New → Blueprint** → choose the `CaseWise` repository → Render reads `render.yaml`.
+4. When Render asks for **`GROQ_API_KEY`**, paste the key. Leave **`CONTACT_EMAIL`** empty until the owner has an address. Later Blueprint syncs ignore `sync: false` values, so add it in the **Environment** tab. Render only asks for `sync: false` values when the Blueprint is first created; later changes go in the service's **Environment** tab.
 5. Deploy. The build installs the hashed lock file. Watch the logs for `AI ready: groq (model: openai/gpt-oss-120b)`.
 6. Open `https://<service-name>.onrender.com/health`. Expect `{"status":"ok","provider":"groq",…,"reachable":true,"model_available":true}`. The exact URL depends on name availability (e.g. `casewise.onrender.com` or with a suffix).
 7. Run the L14 checks ([section 9.1](#91-necessary-before-going-live-in-this-order)).
@@ -343,6 +343,8 @@ Commit both the `.in` and `.txt` files. `--allow-unsafe` is needed for the dev l
   - JSON mode (`response_format: json_object`) works **with streaming**.
   - Errors: 401 means a bad key (shown as "isn't configured correctly"), 429 a rate limit, and a 400 containing `context_length` means the text is too long.
 - **Render:**
+  - The live service sits behind Cloudflare (`Server: cloudflare`). Don't send faked `CF-Connecting-IP` headers when testing: Cloudflare returns 403, and the next connection from that machine was reset.
+  - The rate limit runs before text checks, so empty or too-long requests also count towards it.
   - `env:` in render.yaml is deprecated; use `runtime:`.
   - Community reports say Render **appends** to a client-sent `X-Forwarded-For`, so never trust its first entry.
   - The free plan sleeps after inactivity.
@@ -365,4 +367,4 @@ Commit both the `.in` and `.txt` files. `--allow-unsafe` is needed for the dev l
 
 ## 12. Suggested next step
 
-**L14 (deploy):** get the contact email from the owner, then follow [section 10](#10-deploy-process-render) and run the checks in [section 9.1](#91-necessary-before-going-live-in-this-order).
+Finish the open L14 checks in [section 9.1](#91-necessary-before-going-live-in-this-order). Then, before promoting the site widely, add the contact email and get the lawyer review. After that, choose from [section 9.2](#92-optional-soon-after-launch).

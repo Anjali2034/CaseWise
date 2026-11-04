@@ -1,6 +1,6 @@
 # CaseWise
 
-CaseWise is an AI legal document assistant. It helps you understand, draft and review legal documents in plain language. Run it with a language model on your own computer (Ollama), or with Groq's hosted API, which the live site uses.
+CaseWise is an AI legal document assistant. It helps you understand, draft and review legal documents in plain language. **Live site:** <https://casewise-youo.onrender.com>. Run it with a language model on your own computer (Ollama), or with Groq's hosted API, which the live site uses.
 
 > **Not legal advice.** CaseWise gives general legal information. AI can make mistakes, so have a qualified lawyer review anything important.
 
@@ -48,8 +48,8 @@ GROQ_API_KEY=your-key-here
 ### 2. Install CaseWise
 
 ```bash
-git clone https://github.com/Anjali2034/Casewise-AI.git
-cd Casewise-AI
+git clone https://github.com/Anjali2034/CaseWise.git
+cd CaseWise
 python -m venv venv
 ```
 
@@ -176,7 +176,7 @@ The live site runs on [Render](https://render.com)'s free plan, using Groq for t
 
 1. **Get a Groq API key** at [console.groq.com/keys](https://console.groq.com/keys).
 2. **Turn on Zero Data Retention** in Groq's [Data Controls settings](https://console.groq.com/settings/data-controls), so Groq doesn't keep request logs even for troubleshooting.
-3. In Render, choose **New → Blueprint** and connect this GitHub repository. Render reads `render.yaml` and asks for `GROQ_API_KEY` and `CONTACT_EMAIL`. Paste the key and the email address to publish. The key is stored as a secret, never in the code.
+3. In Render, choose **New → Blueprint** and connect this GitHub repository. Render reads `render.yaml` and asks for `GROQ_API_KEY` and `CONTACT_EMAIL`. Paste the key there; it's stored as a secret, never in the code. Enter the email address to publish, or add it later in the service's **Environment** tab.
 4. When the deploy finishes, open `https://<your-service>.onrender.com/health` and check for `"status": "ok"`.
 
 Groq's free plan allows **1,000 requests a day and 8,000 tokens a minute**, shared by all visitors. A typical request uses about 400-900 tokens. When the quota runs out, users see "CaseWise is very busy right now" and can retry a minute later.
