@@ -1,4 +1,4 @@
-"""User content never reaches logs (fix #8); templates are safe and valid (fix #1)."""
+"""User content never reaches logs; templates are safe and valid."""
 import logging
 import re
 from pathlib import Path

@@ -1,4 +1,4 @@
-"""Every tool shows a "not legal advice" notice; every prompt carries the safety rules (fix #13)."""
+"""Every tool shows a "not legal advice" notice; every prompt carries the safety rules."""
 from unittest import mock
 
 import pytest

@@ -39,7 +39,8 @@ ENV/
 
 # System Files
 .DS_Store
-Thumbs.db 
+Thumbs.db
+
 # Jupyter
 .ipynb_checkpoints/
 
@@ -50,8 +51,9 @@ Thumbs.db
 # Claude Code local settings
 .claude/
 
-# Personal progress tracker (local only)
+# Personal notes (local only)
 CHECKLIST.md
+PROJECT_CONTEXT.md
 
 # Test cache
 .pytest_cache/

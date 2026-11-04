@@ -1,4 +1,4 @@
-"""Per-visitor rate limits on the AI endpoints (fix #27)."""
+"""Per-visitor rate limits on the AI endpoints."""
 import pytest
 
 import main

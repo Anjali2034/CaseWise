@@ -91,7 +91,7 @@ main {
     margin-top: var(--navbar-height);
 }
 
-/* ---------- 3. Navbar (was a <style> block after </html> in base.html) ---------- */
+/* ---------- 3. Navbar ---------- */
 .navbar {
     position: fixed;
     top: 0;

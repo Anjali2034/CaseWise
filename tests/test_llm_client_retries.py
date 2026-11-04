@@ -1,4 +1,4 @@
-"""OllamaClient._generate_stream against a fake Ollama HTTP server (fix #6)."""
+"""OllamaClient._generate_stream against a fake Ollama HTTP server."""
 import json
 import socket
 import threading

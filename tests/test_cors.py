@@ -1,4 +1,4 @@
-"""CORS: closed by default, explicit origins only, never "*" with credentials (fix #11)."""
+"""CORS: closed by default, explicit origins only, never "*" with credentials."""
 import pytest
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

@@ -13,15 +13,14 @@ import re
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
-# Earlier turns of a conversation, oldest first: [{"role": "user" | "assistant", "content": "..."}]
-History = Optional[List[Dict[str, str]]]
-
 import requests
 
 import prompts
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Earlier turns of a conversation, oldest first: [{"role": "user" | "assistant", "content": "..."}]
+History = Optional[List[Dict[str, str]]]
 
 
 # ---------- Errors ----------
@@ -267,15 +266,16 @@ class LLMClient:
 
 def _parse_json_object(text: str) -> Optional[Dict[str, Any]]:
     """Parse a JSON object from the model's answer, also when it's wrapped in prose."""
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        match = re.search(r"\{.*\}", text, re.DOTALL)
-        if match:
-            try:
-                return json.loads(match.group())
-            except json.JSONDecodeError:
-                pass
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    for candidate in (text, match.group() if match else None):
+        if candidate is None:
+            continue
+        try:
+            parsed = json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(parsed, dict):
+            return parsed
     return None
 
 

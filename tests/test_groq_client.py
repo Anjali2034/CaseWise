@@ -1,4 +1,4 @@
-"""GroqClient against a fake OpenAI-compatible server (fix #27: hosted AI provider)."""
+"""GroqClient against a fake OpenAI-compatible server."""
 import json
 import socket
 import threading

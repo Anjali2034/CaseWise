@@ -71,7 +71,7 @@ def test_pdf_endpoints_extract_text_and_call_model(client, llm_reply, endpoint):
     assert post(client, endpoint, None).status_code == 200
 
 
-# ---------- bad input: 400 / 413 (fixes #4, #10) ----------
+# ---------- bad input: 400 / 413 ----------
 
 @pytest.mark.parametrize("endpoint, key", TEXT_ENDPOINTS)
 @pytest.mark.parametrize("text", ["", "   ", "\n\t "])
@@ -149,7 +149,7 @@ def test_fake_pdf_is_400(client, endpoint):
     assert r.json()["detail"] == "The uploaded file is not a valid PDF"
 
 
-# ---------- LLM failures map to the right status (fixes #3, #5, #6, #9) ----------
+# ---------- LLM failures map to the right status ----------
 
 def raised_by_ollama_for_status(status):
     """The exact error the Ollama client raises for an HTTP status (with its user message)."""
@@ -192,7 +192,15 @@ def test_unparseable_model_output_is_502(client, llm_reply, endpoint, key):
     assert "unexpected format" in r.json()["detail"]
 
 
-# ---------- empty answers (fix #26) ----------
+@pytest.mark.parametrize("endpoint, key", [("/analyze-contract", "contract_text"), ("/check-compliance", "legal_text")])
+def test_valid_json_that_is_not_an_object_is_502(client, llm_reply, endpoint, key):
+    llm_reply("[1, 2, 3]")
+    r = client.post(endpoint, json={key: "text"})
+    assert r.status_code == 502
+    assert "unexpected format" in r.json()["detail"]
+
+
+# ---------- empty answers ----------
 
 @pytest.mark.parametrize("endpoint, key", [(ep, k) for ep, k in ALL_ENDPOINTS
                                            if "analyze" not in ep and "compliance" not in ep])
@@ -218,7 +226,7 @@ def test_all_endpoints_share_one_error_handler():
     assert inspect.getsource(main).count("raise handle_llm_error(e)") == helpers.count("raise handle_llm_error(e)") == 2
 
 
-# ---------- no internal details leak (fix #9) ----------
+# ---------- no internal details leak ----------
 
 SECRET = r"C:\internal\secret\config.py api_key=xyz"
 

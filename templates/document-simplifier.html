@@ -51,7 +51,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const responseArea = document.getElementById('response');
     const loadingIndicator = document.getElementById('loading');
 
-    // Handle PDF upload
     pdfUpload.addEventListener('change', whileBusy(async function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -75,7 +74,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }, { onFirstText: () => { loadingIndicator.style.display = 'none'; } });
             addResultActions(responseArea.querySelector('.markdown'), { name: 'simplified' });
 
-            // Clear the file input
             pdfUpload.value = '';
             fileInfo.textContent = '';
         } catch (error) {
@@ -86,7 +84,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }));
 
-    // Handle text input
     form.addEventListener('submit', whileBusy(async function(e) {
         e.preventDefault();
 

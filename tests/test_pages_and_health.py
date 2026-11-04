@@ -44,14 +44,14 @@ def test_model_is_configurable():
 
 
 def test_llm_endpoints_are_sync_so_they_run_in_a_threadpool():
-    """`async def` + blocking requests would freeze the whole server (fix #2)."""
+    """`async def` + blocking requests would freeze the whole server."""
     for name in ["legal_assistant", "generate_document", "analyze_contract", "check_compliance",
                  "simplify_document", "simplify_document_pdf", "analyze_contract_pdf",
                  "check_compliance_pdf"]:
         assert not inspect.iscoroutinefunction(getattr(main, name)), name
 
 
-# ---------- home page content (fix #12) ----------
+# ---------- home page content ----------
 
 FABRICATED_CLAIMS = ["Trusted by", "thousands", "Sarah Johnson", "Michael Chen",
                      "Emily Rodriguez", "the best way", "testimonial"]

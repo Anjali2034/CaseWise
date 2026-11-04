@@ -6,7 +6,7 @@ import pytest
 
 STYLES = Path("static/css/styles.css").read_text(encoding="utf-8")
 
-# ---------- no dead links (fix #16) ----------
+# ---------- no dead links ----------
 
 PAGES = ["/", "/legal-assistant", "/document-generator", "/contract-analyzer",
          "/compliance-checker", "/document-simplifier"]
@@ -32,7 +32,7 @@ def test_no_links_to_account_pages_that_do_not_exist(client, page):
     assert "/login" not in html and "/register" not in html
 
 
-# ---------- no sideways scrolling on phones (fix #17) ----------
+# ---------- no sideways scrolling on phones ----------
 
 def test_response_area_counts_padding_inside_its_width():
     """width:100% + padding + border made the box 18px wider than a 375px phone screen."""
@@ -41,7 +41,7 @@ def test_response_area_counts_padding_inside_its_width():
     assert "box-sizing: border-box" in block
 
 
-# ---------- result box hidden until there is a result (fix #18) ----------
+# ---------- result box hidden until there is a result ----------
 
 RESULT_PAGES = ["/contract-analyzer", "/compliance-checker", "/document-generator", "/document-simplifier"]
 
@@ -56,7 +56,7 @@ def test_result_box_starts_truly_empty_and_is_announced(client, path):
     assert '<div id="response" class="response-area" aria-live="polite"></div>' in client.get(path).text
 
 
-# ---------- no blank gaps in HTML results (fix #19) ----------
+# ---------- no blank gaps in HTML results ----------
 
 def css_rule(css, selector):
     m = re.search(r"^" + re.escape(selector) + r" \{([^}]*)\}", css, re.M)
@@ -80,10 +80,10 @@ def test_text_answers_are_streamed_and_formatted():
                                 ("legal-assistant.html", ["/legal-assistant/stream"])]:
         js = (Path("templates") / template).read_text(encoding="utf-8")
         for endpoint in endpoints:
-            assert f"streamInto(" in js and f"'{endpoint}'" in js, (template, endpoint)
+            assert "streamInto(" in js and f"'{endpoint}'" in js, (template, endpoint)
 
 
-# ---------- one request at a time (fix #20) ----------
+# ---------- one request at a time ----------
 
 REQUEST_HANDLERS = {  # template -> number of handlers that send a request
     "legal-assistant.html": 1, "document-generator.html": 1, "contract-analyzer.html": 2,
@@ -109,7 +109,7 @@ def test_upload_box_looks_disabled_while_busy():
     assert re.search(r'\.chat-input-container\[aria-busy="true"\] \.upload-label \{[^}]*pointer-events: none', STYLES)
 
 
-# ---------- keep the user's text (fix #21) ----------
+# ---------- keep the user's text ----------
 
 @pytest.mark.parametrize("template, var", [("compliance-checker.html", "documentInput"),
                                            ("contract-analyzer.html", "contractInput"),
@@ -136,7 +136,7 @@ def test_every_page_shows_the_servers_own_error_message(template):
     assert "Server error:" not in js and "HTTP error!" not in js
 
 
-# ---------- shared, keyboard-accessible PDF upload box (fix #22) ----------
+# ---------- shared, keyboard-accessible PDF upload box ----------
 
 UPLOAD_PAGES = {"/contract-analyzer": "Upload PDF Contract",
                 "/compliance-checker": "Upload PDF Document",
@@ -173,13 +173,13 @@ def test_pages_do_not_carry_their_own_upload_css(template):
     assert not re.search(r"^\.(upload-|file-input|file-info)", css, re.M)
 
 
-# ---------- small cleanups: items 4-10 (fix #23) ----------
+# ---------- small cleanups ----------
 
 BASE = Path("templates/base.html").read_text(encoding="utf-8")
 
 
 def test_base_html_has_no_style_blocks_and_ends_at_html():
-    """Navbar CSS used to sit in a <style> block after </html>; colours in a second inline :root."""
+    """All styles live in styles.css, and nothing follows </html>."""
     assert "<style" not in BASE
     assert BASE.rstrip().endswith("</html>")
     assert ".navbar {" in STYLES and ".mobile-menu.active" in STYLES
@@ -224,7 +224,7 @@ def test_no_dead_error_field_branches(template):
     assert "data.error" not in js and "raw_response" not in js
 
 
-# ---------- one shared stylesheet (fix #25) ----------
+# ---------- one shared stylesheet ----------
 
 SHARED_SELECTORS = [".chat-container", ".chat-main", ".chat-messages", ".welcome-message", ".chat-input-container",
                     ".chat-form", ".input-wrapper", ".send-button", ".disclaimer", ".response-area",
@@ -259,7 +259,7 @@ def test_both_result_pages_use_the_same_result_classes(template, old):
     assert f'class="{old}' not in js
 
 
-# ---------- global CSS must not override page components (fix #15) ----------
+# ---------- global CSS must not override page components ----------
 
 def test_no_global_rules_that_restyle_every_textarea_or_submit_button():
     """These made the send button a 180px block and the chat textarea 150px tall."""
@@ -277,7 +277,7 @@ def test_chat_input_shows_keyboard_focus():
     assert re.search(r"\.input-wrapper:focus-within \{[^}]*border-color", STYLES)
 
 
-# ---------- loading indicator (fix #14) ----------
+# ---------- loading indicator ----------
 
 LOADING_PAGES = {
     "/contract-analyzer": "Analyzing contract...",
@@ -307,7 +307,7 @@ def test_no_page_overrides_the_shared_loading_style(template):
 
 
 def test_only_one_loading_style_exists():
-    """An old second .loading rule animated ::after, which made the label spin."""
+    """A second .loading rule could animate ::after, which would make the label spin."""
     assert len(re.findall(r"^\.loading \{", STYLES, re.M)) == 1
     assert len(re.findall(r"^\.loading::after \{", STYLES, re.M)) == 1
     assert "@keyframes spin " not in STYLES

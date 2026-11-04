@@ -12,7 +12,7 @@ Q1 = {"role": "user", "content": "My landlord in Pune is keeping my Rs 50,000 de
 A1 = {"role": "assistant", "content": "You can send a legal notice."}
 
 
-# ---------- L8: conversation history ----------
+# ---------- conversation history ----------
 
 @pytest.mark.parametrize("endpoint", ["/legal-assistant", "/legal-assistant/stream"])
 def test_history_reaches_the_model(client, endpoint):
@@ -62,7 +62,7 @@ def test_ollama_folds_history_into_the_prompt():
     assert body["prompt"].endswith("New question: New question")
 
 
-# ---------- L9: Ollama refuses text that won't fit instead of silently cutting it ----------
+# ---------- Ollama refuses text that won't fit instead of silently cutting it ----------
 
 def test_ollama_sends_its_context_size():
     _, body, _ = oc.OllamaClient(num_ctx=8192)._request("p", "s")
@@ -86,7 +86,7 @@ def test_num_ctx_is_configurable():
     assert main.llm.num_ctx == main.OLLAMA_NUM_CTX == 4096
 
 
-# ---------- L8 frontend: chats saved only in the browser ----------
+# ---------- chats saved only in the browser ----------
 
 LA = Path("templates/legal-assistant.html").read_text(encoding="utf-8")
 BASE = Path("templates/base.html").read_text(encoding="utf-8")
@@ -117,7 +117,7 @@ def test_home_page_privacy_claim_matches_reality(client):
     assert "Nothing Is Stored" not in html
 
 
-# ---------- L11: Copy / Download ----------
+# ---------- Copy / Download ----------
 
 @pytest.mark.parametrize("template, name", [("document-generator.html", "document"),
                                             ("document-simplifier.html", "simplified"),
@@ -125,7 +125,7 @@ def test_home_page_privacy_claim_matches_reality(client):
                                             ("compliance-checker.html", "compliance-check")])
 def test_every_tool_result_gets_copy_and_download(template, name):
     js = (Path("templates") / template).read_text(encoding="utf-8")
-    assert f"addResultActions(" in js and f"name: '{name}'" in js
+    assert "addResultActions(" in js and f"name: '{name}'" in js
 
 
 def test_chat_answers_get_copy_only():
@@ -139,7 +139,7 @@ def test_copy_keeps_formatting_and_download_carries_the_disclaimer():
     assert "URL.revokeObjectURL" in actions
 
 
-# ---------- L12: Enter to send ----------
+# ---------- Enter to send ----------
 
 def test_only_the_chat_sends_on_plain_enter(client):
     form_opts_in = re.compile(r"<form[^>]*\bdata-enter-sends\b")

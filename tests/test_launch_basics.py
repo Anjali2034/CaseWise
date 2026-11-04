@@ -1,4 +1,4 @@
-"""L3 + L13: Privacy and Terms pages, link previews, error pages, security headers."""
+"""Privacy and Terms pages, link previews, error pages, security headers."""
 import html as html_lib
 import re
 from pathlib import Path
@@ -15,7 +15,7 @@ PAGES = ["/", *TOOLS, "/privacy", "/terms"]
 HTML = {"accept": "text/html,application/xhtml+xml"}
 
 
-# ---------- L3: legal pages ----------
+# ---------- legal pages ----------
 
 @pytest.mark.parametrize("path, title", [("/privacy", "Privacy Policy - CaseWise"), ("/terms", "Terms of Use - CaseWise")])
 def test_legal_pages_render(client, path, title):
@@ -71,7 +71,7 @@ def test_contact_email_is_published_when_set(client, path):
         assert "contact details will be added here soon" in client.get(path).text
 
 
-# ---------- L13: link previews ----------
+# ---------- link previews ----------
 
 @pytest.mark.parametrize("page", PAGES)
 def test_every_page_has_a_description_and_link_preview(client, page):
@@ -105,7 +105,7 @@ def test_assets_use_paths_that_work_behind_a_proxy(client, page):
     assert 'href="/static/css/styles.css"' in html
 
 
-# ---------- L13: error pages ----------
+# ---------- error pages ----------
 
 def test_wrong_address_shows_a_designed_page_to_people(client):
     r = client.get("/no-such-page", headers=HTML)
@@ -139,7 +139,7 @@ def test_unexpected_crash_reveals_nothing_and_gives_an_id(headers, is_html, capl
     assert "Content-Security-Policy" in r.headers
 
 
-# ---------- L13: security headers ----------
+# ---------- security headers ----------
 
 @pytest.mark.parametrize("path", [*PAGES, "/health", "/static/css/styles.css"])
 def test_security_headers_on_every_response(client, path):

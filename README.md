@@ -17,7 +17,7 @@ CaseWise is an AI legal document assistant. It helps you understand, draft and r
 ## Privacy
 
 - **Your choice of AI:** locally, CaseWise talks to [Ollama](https://ollama.com) on your own computer, so documents never leave it. The live site uses [Groq](https://groq.com), whose [terms](https://console.groq.com/docs/legal/services-agreement) say it doesn't train on API inputs or outputs and [doesn't keep them by default](https://console.groq.com/docs/your-data).
-- **Nothing stored on the server:** there is no database. Uploaded documents are processed in memory. Legal Assistant chats are saved only in the user's own browser (`localStorage`), where they can be deleted.
+- **No documents stored on the server:** there is no database. Uploaded documents are processed in memory. Legal Assistant chats are saved only in the user's own browser (`localStorage`), where they can be deleted. Visitors' IP addresses are held in memory for up to 24 hours, for the rate limits.
 - **Nothing sensitive in the logs:** server logs record sizes ("212 chars"), never the text of questions, documents or file names.
 - **Policies:** the site's [Privacy Policy](templates/privacy.html) and [Terms of Use](templates/terms.html) are at `/privacy` and `/terms`. If you change how data is handled, update them too.
 
@@ -100,14 +100,18 @@ Settings are read from environment variables, or from a `.env` file in the proje
 | `SITE_URL` | `RENDER_EXTERNAL_URL` | The site's public address, for link previews. Not needed on Render; set it when you use a custom domain |
 | `PORT` | `8000` | Port used by `python main.py` |
 
-## Running the tests
+## Deployment
 
-```bash
-pip install -r requirements-dev.txt
-pytest
-```
+The live site runs on [Render](https://render.com)'s free plan, using Groq for the AI. [render.yaml](render.yaml) describes the whole service.
 
-The tests don't need Ollama: they replace the model with a fake one. They cover every page and API endpoint, error handling, retries, input limits, privacy (no document text in logs), XSS escaping, security headers, link previews, accessibility checks and branding.
+1. **Get a Groq API key** at [console.groq.com/keys](https://console.groq.com/keys).
+2. **Turn on Zero Data Retention** in Groq's [Data Controls settings](https://console.groq.com/settings/data-controls), so Groq doesn't keep request logs even for troubleshooting.
+3. In Render, choose **New → Blueprint** and connect this GitHub repository. Render reads `render.yaml` and asks for `GROQ_API_KEY` and `CONTACT_EMAIL`. Paste the key there; it's stored as a secret, never in the code. Enter the email address to publish, or add it later in the service's **Environment** tab.
+4. When the deploy finishes, open `https://<your-service>.onrender.com/health` and check for `"status": "ok"`.
+
+Groq's free plan allows **1,000 requests a day and 8,000 tokens a minute**, shared by all visitors. A typical request uses about 400-900 tokens. When the quota runs out, users see "CaseWise is very busy right now" and can retry a minute later.
+
+On the free plan, the service sleeps after about 15 minutes without visitors, and the next visit takes 30-60 seconds to wake it up. Rate limits are kept in memory, so they reset when it restarts.
 
 ## API
 
@@ -159,6 +163,15 @@ requirements.txt        Lock file generated from requirements.in (every package 
 render.yaml, Procfile   Deployment configuration
 ```
 
+## Running the tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+The tests don't need Ollama: they replace the model with a fake one. They cover every page and API endpoint, error handling, retries, input limits, privacy (no document text in logs), XSS escaping, security headers, link previews, accessibility checks and branding.
+
 ## Updating dependencies
 
 `requirements.txt` and `requirements-dev.txt` are **generated** lock files: they pin every package, including indirect ones, to an exact version with a security hash. Don't edit them by hand. Instead, change `requirements.in` (or `requirements-dev.in` for test tools), then regenerate:
@@ -169,16 +182,3 @@ pip-compile --generate-hashes requirements.in
 pip-compile --generate-hashes --allow-unsafe requirements-dev.in
 pytest
 ```
-
-## Deployment
-
-The live site runs on [Render](https://render.com)'s free plan, using Groq for the AI. [render.yaml](render.yaml) describes the whole service.
-
-1. **Get a Groq API key** at [console.groq.com/keys](https://console.groq.com/keys).
-2. **Turn on Zero Data Retention** in Groq's [Data Controls settings](https://console.groq.com/settings/data-controls), so Groq doesn't keep request logs even for troubleshooting.
-3. In Render, choose **New → Blueprint** and connect this GitHub repository. Render reads `render.yaml` and asks for `GROQ_API_KEY` and `CONTACT_EMAIL`. Paste the key there; it's stored as a secret, never in the code. Enter the email address to publish, or add it later in the service's **Environment** tab.
-4. When the deploy finishes, open `https://<your-service>.onrender.com/health` and check for `"status": "ok"`.
-
-Groq's free plan allows **1,000 requests a day and 8,000 tokens a minute**, shared by all visitors. A typical request uses about 400-900 tokens. When the quota runs out, users see "CaseWise is very busy right now" and can retry a minute later.
-
-On the free plan, the service sleeps after about 15 minutes without visitors, and the next visit takes 30-60 seconds to wake it up. Rate limits are kept in memory, so they reset when it restarts.

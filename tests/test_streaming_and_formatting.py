@@ -29,7 +29,7 @@ def streaming(*pieces, fail_after=None):
     return gen
 
 
-# ---------- L4: streaming endpoints ----------
+# ---------- streaming endpoints ----------
 
 @pytest.mark.parametrize("endpoint, key", STREAM_ENDPOINTS)
 def test_stream_sends_each_piece_then_done(client, endpoint, key):
@@ -92,7 +92,7 @@ def test_stream_uses_each_tools_own_prompt():
         assert stream.call_args.args[1] == prompt
 
 
-# ---------- L6: JSON mode for the analysis tools ----------
+# ---------- JSON mode for the analysis tools ----------
 
 @pytest.mark.parametrize("client_obj, key, expected", [
     (oc.OllamaClient(), "format", "json"),
@@ -120,7 +120,7 @@ def test_text_tools_do_not_use_json_mode(method):
     assert not stream.call_args.kwargs.get("json_mode")
 
 
-# ---------- L7: Indian law by default ----------
+# ---------- Indian law by default ----------
 
 ALL_PROMPTS = [prompts.LEGAL_ASSISTANT, prompts.DOCUMENT_GENERATOR, prompts.CONTRACT_ANALYZER,
                prompts.COMPLIANCE_CHECKER, prompts.DOCUMENT_SIMPLIFIER]
@@ -142,7 +142,7 @@ def test_compliance_checks_against_indian_law():
     assert "Indian Contract Act, 1872" in prompts.COMPLIANCE_CHECKER
 
 
-# ---------- L5: formatted (Markdown) answers, safely ----------
+# ---------- formatted (Markdown) answers, safely ----------
 
 VENDOR = Path("static/vendor")
 BASE = Path("templates/base.html").read_text(encoding="utf-8")

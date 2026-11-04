@@ -1,12 +1,11 @@
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile, File
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field, StringConstraints
 from typing import Annotated, List, Literal
 from llm_client import (
@@ -31,7 +30,6 @@ import os
 from pypdf import PdfReader
 import io
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -47,7 +45,7 @@ def env_flag(name: str, default: bool = False) -> bool:
     return os.getenv(name, str(default)).strip().lower() in ("1", "true", "yes", "on")
 
 
-# Get environment variables (all documented in .env.example)
+# Settings (all documented in .env.example)
 ALLOWED_ORIGINS = parse_origins(os.getenv("ALLOWED_ORIGINS", ""))
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama").strip().lower()
 OLLAMA_API_BASE = os.getenv("OLLAMA_API_BASE", "http://localhost:11434")
@@ -64,10 +62,8 @@ SITE_URL = (os.getenv("SITE_URL") or os.getenv("RENDER_EXTERNAL_URL") or "").str
 
 app = FastAPI(title="CaseWise")
 
-# Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Set up templates
 templates = Jinja2Templates(directory="templates")
 templates.env.globals.update(contact_email=CONTACT_EMAIL, site_url=SITE_URL)
 if not CONTACT_EMAIL:
@@ -252,7 +248,7 @@ def extract_pdf_text(file: UploadFile) -> str:
         )
     # Every PDF starts with "%PDF-". Checking this is cheap and doesn't trust
     # the browser-supplied file name or content type.
-    if not data.lstrip()[:5] == b"%PDF-":
+    if data.lstrip()[:5] != b"%PDF-":
         raise HTTPException(status_code=400, detail="The uploaded file is not a valid PDF")
     try:
         reader = PdfReader(io.BytesIO(data))
@@ -469,4 +465,4 @@ def check_compliance_pdf(file: UploadFile = File(...)):
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port) 
+    uvicorn.run(app, host="0.0.0.0", port=port)

@@ -1,4 +1,4 @@
-"""The product is called CaseWise, everywhere, and nothing else (fix #24)."""
+"""The product is called CaseWise, everywhere, and nothing else."""
 import re
 from pathlib import Path
 
@@ -14,7 +14,7 @@ BRAND = "CaseWise"
 OLD_NAMES = re.compile("|".join([r"legal\s*" + "edge", r"auto\s*" + r"docu\s*gen", "docu" + "gen"]), re.I)
 
 SKIP_DIRS = {".git", "venv", ".venv", "env", "__pycache__", ".pytest_cache", "node_modules"}
-SKIP_FILES = {"CHECKLIST.md"}  # private, git-ignored progress notes that record the history
+SKIP_FILES = {"CHECKLIST.md"}  # private progress notes that record the project's history
 TEXT_SUFFIXES = {".py", ".html", ".css", ".js", ".md", ".txt", ".yaml", ".yml", ".ini", ".toml",
                  ".json", ".ipynb", ".example", ""}
 
