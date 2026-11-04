@@ -206,7 +206,7 @@ def test_one_root_block_defines_every_colour_the_site_uses():
         used |= set(re.findall(r"var\((--[\w-]+)\)", template.read_text(encoding="utf-8")))
     defined = set(re.findall(r"(--[\w-]+):", root))
     assert used <= defined, f"used but never defined: {used - defined}"  # --accent-color was missing
-    assert "--primary-color: #4CAF50" in root  # the green the site really shows
+    assert "--primary-color: #0f766e" in root  # Ivory & Ink teal
 
 
 def test_loading_box_counts_padding_inside_its_width():
@@ -249,7 +249,7 @@ def test_legal_assistant_only_keeps_its_own_components():
     selectors = {s.strip() for s in re.findall(r"(?m)^([.\w][^{\n]*) \{", css)}
     own = {".chat-sidebar", ".new-chat", ".new-chat-btn", ".new-chat-btn:hover", ".plus-icon",
            ".message", ".message.user", ".message.assistant", ".message-content", ".message-text"}
-    assert all(sel in own or sel.startswith(".chat-history") for sel in selectors), selectors
+    assert all(sel in own or sel.startswith((".chat-history", ".chat-sidebar", ".chats-toggle", ".input-hint")) for sel in selectors), selectors
 
 
 @pytest.mark.parametrize("template, old", [("contract-analyzer.html", "analysis-"), ("compliance-checker.html", "compliance-")])

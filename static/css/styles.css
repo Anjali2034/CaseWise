@@ -1,21 +1,67 @@
-/* Colours used across the whole site (the only :root block; base.html used to
-   override some of these with a second, inline one). */
+/* =====================================================================
+   CaseWise: "Ivory & Ink" design
+   1. Design tokens   2. Base   3. Navbar   4. Tool page layout
+   5. Inputs & upload   6. Loading   7. Results & Markdown
+   8. Errors, actions, disclaimer   9. Motion
+   Every colour comes from a token below; nothing is hard-coded.
+   ===================================================================== */
+
+/* ---------- 1. Design tokens (the only :root block) ---------- */
 :root {
-    --bg-color: #1a1a1a;
-    --card-bg: #2a2a2a;
-    --text-color: #ffffff;
-    --primary-color: #4CAF50;
-    --accent-color: #43a047;    /* slightly darker green, for hover on primary buttons */
-    --border-color: rgba(255, 255, 255, 0.1);
+    /* Surfaces */
+    --bg-color: #faf8f4;          /* ivory page background */
+    --card-bg: #ffffff;           /* cards, inputs, result boxes */
+    --surface-2: #f2eee7;         /* subtle panels: sidebar, table headers, list items */
+    --surface-hover: #ebe6dd;
+
+    /* Text (all at least 4.5:1 on the ivory background, WCAG AA) */
+    --text-color: #1b2230;        /* ink */
+    --text-muted: #4f5a6a;
+    --text-faint: #5f6876;
+
+    /* Brand */
+    --primary-color: #0f766e;     /* teal: buttons, links, accents */
+    --accent-color: #0b5f58;      /* darker teal: hover on primary buttons */
+    --brand-ink: #0f5f59;         /* logo and section titles */
+    --on-primary: #ffffff;
+    --primary-soft: rgba(15, 118, 110, 0.09);
+    --focus-ring: rgba(15, 118, 110, 0.22);
+
+    /* Lines and depth */
+    --border-color: rgba(27, 34, 48, 0.10);
+    --border-strong: rgba(27, 34, 48, 0.18);
+    --shadow-sm: 0 1px 2px rgba(27, 34, 48, 0.05);
+    --shadow-md: 0 1px 2px rgba(27, 34, 48, 0.05), 0 8px 24px rgba(27, 34, 48, 0.06);
+
+    /* Status */
+    --danger: #b42318;
+    --danger-bg: #fef3f2;
+    --danger-border: rgba(180, 35, 24, 0.22);
+
+    /* Shape and type */
+    --radius-sm: 8px;
+    --radius: 14px;
+    --font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+    --font-mono: ui-monospace, SFMono-Regular, Consolas, monospace;
+    --navbar-height: 60px;
 }
 
+/* ---------- 2. Base ---------- */
 body {
     margin: 0;
     padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-family: var(--font-body);
     background-color: var(--bg-color);
     color: var(--text-color);
     line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+    color: var(--text-color);
 }
 
 /* The `hidden` attribute must always win: otherwise a rule like
@@ -30,99 +76,322 @@ button {
     font-family: inherit;
 }
 
-/* Show keyboard focus on the chat-style input box (pages remove the textarea outline) */
+/* One consistent keyboard focus ring across the site */
+:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+a {
+    color: var(--primary-color);
+}
+
+/* Push content below the fixed navbar */
+main {
+    margin-top: var(--navbar-height);
+}
+
+/* ---------- 3. Navbar (was a <style> block after </html> in base.html) ---------- */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--navbar-height);
+    background-color: rgba(250, 248, 244, 0.92);
+    backdrop-filter: saturate(140%) blur(10px);
+    border-bottom: 1px solid var(--border-color);
+    z-index: 1000;
+}
+
+.navbar-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.25rem;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.navbar-left {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.navbar-logo {
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.logo-mark {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+}
+
+.logo-text {
+    font-family: var(--font-display);
+    font-size: 1.45rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--brand-ink);
+}
+
+.navbar-links {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.nav-link {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.92rem;
+    font-weight: 500;
+    padding: 0.25rem 0;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.nav-link:hover {
+    color: var(--text-color);
+}
+
+.nav-link[aria-current="page"] {
+    color: var(--text-color);
+    border-bottom-color: var(--primary-color);
+}
+
+.mobile-menu-button {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: var(--radius-sm);
+}
+
+.mobile-menu {
+    display: none;
+    position: fixed;
+    top: var(--navbar-height);
+    left: 0;
+    right: 0;
+    background-color: var(--card-bg);
+    padding: 0.5rem 1.25rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md);
+    z-index: 999;
+}
+
+.mobile-nav-link {
+    display: block;
+    color: var(--text-color);
+    text-decoration: none;
+    padding: 0.75rem 0;
+    font-size: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.mobile-nav-link:last-child {
+    border-bottom: none;
+}
+
+.mobile-nav-link[aria-current="page"] {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .navbar-links {
+        display: none;
+    }
+
+    .mobile-menu-button {
+        display: block;
+    }
+
+    .mobile-menu {
+        display: none;
+    }
+
+    .mobile-menu.active {
+        display: block;
+    }
+
+    .mobile-menu-button.active {
+        background-color: var(--surface-2);
+    }
+}
+
+/* ---------- 4. Tool page layout ---------- */
+/* The Legal Assistant is a chat: fixed height, messages scroll, input pinned at the bottom.
+   The other tools add .tool-page: a normal page that grows with its result, so a long
+   result scrolls the page itself (one scrollbar) instead of a box inside the input panel. */
+.chat-container {
+    display: flex;
+    height: calc(100vh - var(--navbar-height));
+    background-color: var(--bg-color);
+}
+
+.chat-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-color);
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem;
+}
+
+.welcome-message {
+    text-align: center;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 2rem 1rem 1rem;
+}
+
+.welcome-message h1 {
+    font-size: 2.3rem;
+    line-height: 1.15;
+    margin: 0 0 0.75rem;
+}
+
+.welcome-message p {
+    color: var(--text-muted);
+    font-size: 1.08rem;
+    margin: 0;
+}
+
+.chat-input-container {
+    padding: 1.25rem 1.5rem 1.5rem;
+    background-color: var(--bg-color);
+    border-top: 1px solid var(--border-color);
+}
+
+.tool-page {
+    height: auto;
+    min-height: calc(100vh - var(--navbar-height));
+}
+
+.tool-page .chat-messages {
+    flex: none;
+    overflow: visible;
+    padding: 3rem 1.5rem 0.5rem;
+}
+
+.tool-page .chat-input-container {
+    border-top: none;
+    padding-bottom: 3rem;
+}
+
+@media (max-width: 768px) {
+    .chat-messages {
+        padding: 1rem;
+    }
+
+    .tool-page .chat-messages {
+        padding: 2rem 1rem 0.25rem;
+    }
+
+    .welcome-message {
+        padding: 1rem 0.5rem;
+    }
+
+    .welcome-message h1 {
+        font-size: 1.85rem;
+    }
+
+    .chat-input-container {
+        padding: 1rem;
+    }
+}
+
+/* ---------- 5. Inputs & upload ---------- */
+.chat-form {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    padding: 0.6rem 0.6rem 0.6rem 0.9rem;
+    box-shadow: var(--shadow-sm);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Keyboard focus on the input box (the textarea's own outline is removed below) */
 .input-wrapper:focus-within {
     border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
-/* Response areas */
-.response-area {
-    /* Count padding and border inside the 100% width; without this the box
-       sticks out past the right edge of a phone screen (sideways scrolling). */
-    box-sizing: border-box;
-    width: 100%;
-    max-width: 800px;
-    margin: 1rem auto;
-    padding: 1rem;
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    background-color: var(--card-bg);
-    word-wrap: break-word;
-    text-align: left;
-    font-size: 0.9rem;
+.input-wrapper textarea {
+    flex: 1;
+    background: none;
+    border: none;
     color: var(--text-color);
+    font-size: 1rem;
+    line-height: 1.5;
+    resize: none;
+    max-height: 200px;
+    padding: 0.45rem 0;
 }
 
-/* AI answers rendered from Markdown (see renderMarkdown in base.html) */
-.markdown {
-    white-space: normal;
-    line-height: 1.65;
-    font-size: 0.95rem;
-    overflow-wrap: anywhere;
+.input-wrapper textarea::placeholder {
+    color: var(--text-faint);
 }
 
-.markdown > :first-child { margin-top: 0; }
-.markdown > :last-child { margin-bottom: 0; }
-
-.markdown p { margin: 0.6em 0; }
-
-.markdown h1, .markdown h2, .markdown h3, .markdown h4 {
-    margin: 1.2em 0 0.5em;
-    line-height: 1.3;
-    color: var(--text-color);
-}
-.markdown h1 { font-size: 1.4rem; }
-.markdown h2 { font-size: 1.2rem; }
-.markdown h3, .markdown h4 { font-size: 1.05rem; }
-
-.markdown strong { color: #ffffff; font-weight: 600; }
-
-.markdown ul, .markdown ol { margin: 0.6em 0; padding-left: 1.5em; }
-.markdown li { margin: 0.25em 0; }
-.markdown li::marker { color: var(--primary-color); }
-
-.markdown a { color: var(--primary-color); }
-
-.markdown code {
-    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-    font-size: 0.88em;
-    background-color: rgba(255, 255, 255, 0.08);
-    padding: 0.1em 0.35em;
-    border-radius: 4px;
-}
-.markdown pre {
-    background-color: rgba(0, 0, 0, 0.3);
-    padding: 0.8em 1em;
-    border-radius: 8px;
-    overflow-x: auto;
-}
-.markdown pre code { background: none; padding: 0; }
-
-.markdown blockquote {
-    margin: 0.8em 0;
-    padding: 0.2em 1em;
-    border-left: 3px solid var(--primary-color);
-    color: rgba(255, 255, 255, 0.8);
+.input-wrapper textarea:focus {
+    outline: none;
 }
 
-.markdown hr { border: none; border-top: 1px solid var(--border-color); margin: 1.2em 0; }
+.send-button {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    background-color: var(--primary-color);
+    border: none;
+    color: var(--on-primary);
+    cursor: pointer;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease, transform 0.15s ease;
+}
 
-/* Models like to answer with tables; let wide ones scroll instead of overflowing */
-.markdown table {
-    display: block;
-    max-width: 100%;
-    overflow-x: auto;
-    border-collapse: collapse;
-    margin: 0.8em 0;
-    font-size: 0.9em;
+.send-button svg {
+    width: 20px;
+    height: 20px;
 }
-.markdown th, .markdown td {
-    border: 1px solid var(--border-color);
-    padding: 0.45em 0.7em;
-    text-align: left;
-    vertical-align: top;
+
+.send-button:hover {
+    background-color: var(--accent-color);
 }
-.markdown th { background-color: rgba(255, 255, 255, 0.06); font-weight: 600; }
+
+.send-button:active {
+    transform: scale(0.96);
+}
+
+.send-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
 
 /* PDF upload box, shared by every tool that accepts PDFs
    (markup: templates/partials/upload.html) */
@@ -134,30 +403,31 @@ button {
 
 .upload-label {
     display: block;
-    padding: 1.5rem;
+    padding: 1.4rem;
     background-color: var(--card-bg);
-    border: 2px dashed rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
+    border: 1.5px dashed var(--border-strong);
+    border-radius: var(--radius);
     cursor: pointer;
-    transition: border-color 0.2s ease, background-color 0.2s ease;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .upload-label:hover {
     border-color: var(--primary-color);
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: var(--primary-soft);
 }
 
 .upload-content {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
     color: var(--text-color);
+    font-weight: 500;
 }
 
 .upload-content svg {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     color: var(--primary-color);
 }
 
@@ -180,7 +450,7 @@ button {
 
 .file-info {
     margin-top: 0.5rem;
-    color: var(--text-color);
+    color: var(--text-muted);
     font-size: 0.9rem;
 }
 
@@ -192,55 +462,7 @@ button {
     pointer-events: none;
 }
 
-/* Copy / Download buttons under a finished result (addResultActions in base.html) */
-.result-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-top: 0.9rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid var(--border-color);
-}
-
-.result-action {
-    background: rgba(255, 255, 255, 0.06);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    padding: 0.35rem 0.8rem;
-    font-size: 0.82rem;
-    cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
-}
-
-.result-action:hover,
-.result-action:focus-visible {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: var(--primary-color);
-}
-
-.result-actions-status {
-    font-size: 0.8rem;
-    color: var(--primary-color);
-}
-
-/* Only show the result box once there is a result (or an error) in it */
-.response-area:empty {
-    display: none;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .response-area {
-        max-width: 100%;
-    }
-}
-
-/* Add margin-top to main content to account for fixed navbar */
-main {
-    margin-top: 60px;
-}
-
+/* ---------- 6. Loading ---------- */
 /* Loading indicator, shared by every tool page.
    Usage: <div class="loading" data-label="Analyzing contract..." role="status" aria-live="polite"></div>
    Pages show it by setting style.display = 'block'. */
@@ -250,21 +472,23 @@ main {
     text-align: center;
     margin: 1rem auto;
     max-width: 800px;
-    padding: 1rem;
+    padding: 1.25rem;
     background-color: var(--card-bg);
-    border-radius: 12px;
-    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    color: var(--text-muted);
+    font-size: 0.95rem;
 }
 
 .loading::before {
     content: "";
     display: inline-block;
-    width: 24px;
-    height: 24px;
-    border: 3px solid var(--primary-color);
+    width: 22px;
+    height: 22px;
+    border: 2.5px solid var(--primary-color);
     border-radius: 50%;
     border-top-color: transparent;
-    animation: loading-spin 1s linear infinite;
+    animation: loading-spin 0.9s linear infinite;
 }
 
 .loading::after {
@@ -285,246 +509,38 @@ main {
     }
 }
 
-/* Navbar (was a <style> block after </html> in base.html) */
-.navbar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 60px;
-    background-color: var(--bg-color);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    z-index: 1000;
-}
-
-.navbar-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 1rem;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.navbar-left {
-    display: flex;
-    align-items: center;
-    gap: 2rem;
-}
-
-.navbar-logo {
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-}
-
-.logo-text {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--text-color);
-    background: linear-gradient(45deg, var(--primary-color), #4CAF50);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.navbar-links {
-    display: flex;
-    gap: 1.5rem;
-}
-
-.nav-link {
-    color: var(--text-color);
-    text-decoration: none;
-    font-size: 0.95rem;
-    opacity: 0.8;
-    transition: opacity 0.2s ease;
-}
-
-.nav-link:hover {
-    opacity: 1;
-}
-
-.mobile-menu-button {
-    display: none;
-    background: none;
-    border: none;
-    color: var(--text-color);
-    cursor: pointer;
-    padding: 0.5rem;
-}
-
-.mobile-menu {
-    display: none;
-    position: fixed;
-    top: 60px;
-    left: 0;
-    right: 0;
-    background-color: var(--bg-color);
-    padding: 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    z-index: 999;
-}
-
-.mobile-nav-link {
-    display: block;
-    color: var(--text-color);
-    text-decoration: none;
-    padding: 0.75rem 0;
-    font-size: 1rem;
-    opacity: 0.8;
-    transition: opacity 0.2s ease;
-}
-
-.mobile-nav-link:hover {
-    opacity: 1;
-}
-
-@media (max-width: 768px) {
-    .navbar-links {
-        display: none;
-    }
-
-    .mobile-menu-button {
-        display: block;
-    }
-
-    .mobile-menu {
-        display: none;
-    }
-
-    .mobile-menu.active {
-        display: block;
-    }
-
-    .mobile-menu-button.active {
-        background-color: rgba(255, 255, 255, 0.1);
-        border-radius: 6px;
-    }
-}
-
-/* Tool pages: chat-style layout shared by all five tools (was copied into every template) */
-.chat-container {
-    display: flex;
-    height: calc(100vh - 60px);
-    margin-top: 60px;
-    background-color: var(--bg-color);
-}
-
-.chat-main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    background-color: var(--bg-color);
-}
-
-.chat-messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 2rem;
-}
-
-.welcome-message {
-    text-align: center;
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 2rem;
-}
-
-.welcome-message h1 {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-    color: var(--text-color);
-}
-
-.welcome-message p {
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 1.1rem;
-}
-
-.chat-input-container {
-    padding: 1.5rem;
-    background-color: var(--bg-color);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.chat-form {
+/* ---------- 7. Results & Markdown ---------- */
+.response-area {
+    /* Count padding and border inside the 100% width; without this the box
+       sticks out past the right edge of a phone screen (sideways scrolling). */
+    box-sizing: border-box;
+    width: 100%;
     max-width: 800px;
-    margin: 0 auto;
-}
-
-.input-wrapper {
-    position: relative;
-    display: flex;
-    align-items: flex-end;
+    margin: 1rem auto;
+    padding: 1.4rem 1.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
     background-color: var(--card-bg);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 0.75rem;
-}
-
-.input-wrapper textarea {
-    flex: 1;
-    background: none;
-    border: none;
+    box-shadow: var(--shadow-md);
+    word-wrap: break-word;
+    text-align: left;
+    font-size: 0.95rem;
     color: var(--text-color);
-    font-size: 1rem;
-    resize: none;
-    max-height: 200px;
-    padding: 0.5rem;
-    padding-right: 3rem;
 }
 
-.input-wrapper textarea:focus {
-    outline: none;
-}
-
-.send-button {
-    background: none;
-    border: none;
-    color: var(--primary-color);
-    padding: 0.5rem;
-    cursor: pointer;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-}
-
-.send-button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-}
-
-.send-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.disclaimer {
-    text-align: center;
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 0.8rem;
-    margin-top: 0.5rem;
-    max-width: 800px;
-    margin: 0.5rem auto;
+/* Only show the result box once there is a result (or an error) in it */
+.response-area:empty {
+    display: none;
 }
 
 @media (max-width: 768px) {
-    .chat-messages {
-        padding: 1rem;
-    }
-    
-    .welcome-message {
-        padding: 1rem;
-    }
-    
-    .chat-input-container {
-        padding: 1rem;
+    .response-area {
+        max-width: 100%;
+        padding: 1.1rem;
     }
 }
 
-/* Results (Contract Analyzer, Compliance Checker) and error messages */
+/* Structured results (Contract Analyzer, Compliance Checker) */
 .result {
     color: var(--text-color);
 }
@@ -533,10 +549,18 @@ main {
     margin-bottom: 1.5rem;
 }
 
+.result-section:last-child {
+    margin-bottom: 0;
+}
+
 .result-section h3 {
-    color: var(--primary-color);
-    margin-bottom: 0.75rem;
-    font-size: 1.2rem;
+    font-family: var(--font-body);
+    color: var(--brand-ink);
+    margin: 0 0 0.75rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
 }
 
 .result-section ul {
@@ -546,26 +570,185 @@ main {
 }
 
 .result-section li {
-    margin-bottom: 0.75rem;
-    padding: 0.75rem;
-    background-color: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
+    margin-bottom: 0.6rem;
+    padding: 0.8rem 1rem;
+    background-color: var(--surface-2);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
 }
 
 .result-section li strong {
     display: block;
-    margin-bottom: 0.25rem;
-    color: var(--primary-color);
+    margin-bottom: 0.2rem;
+    color: var(--brand-ink);
 }
 
+.result-section li p {
+    margin: 0;
+}
+
+/* AI answers rendered from Markdown (see renderMarkdown in base.html) */
+.markdown {
+    white-space: normal;
+    line-height: 1.7;
+    font-size: 0.97rem;
+    overflow-wrap: anywhere;
+}
+
+.markdown > :first-child { margin-top: 0; }
+.markdown > :last-child { margin-bottom: 0; }
+
+.markdown p { margin: 0.65em 0; }
+
+.markdown h1, .markdown h2, .markdown h3, .markdown h4 {
+    margin: 1.3em 0 0.5em;
+    line-height: 1.3;
+}
+.markdown h1 { font-size: 1.45rem; }
+.markdown h2 { font-size: 1.22rem; }
+.markdown h3, .markdown h4 { font-size: 1.06rem; }
+
+.markdown strong { color: var(--text-color); font-weight: 650; }
+
+.markdown ul, .markdown ol { margin: 0.6em 0; padding-left: 1.5em; }
+.markdown li { margin: 0.3em 0; }
+.markdown li::marker { color: var(--primary-color); }
+
+.markdown a { color: var(--primary-color); }
+
+.markdown code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background-color: var(--surface-2);
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+}
+.markdown pre {
+    background-color: var(--surface-2);
+    padding: 0.8em 1em;
+    border-radius: var(--radius-sm);
+    overflow-x: auto;
+}
+.markdown pre code { background: none; padding: 0; }
+
+.markdown blockquote {
+    margin: 0.8em 0;
+    padding: 0.2em 1em;
+    border-left: 3px solid var(--primary-color);
+    color: var(--text-muted);
+}
+
+.markdown hr { border: none; border-top: 1px solid var(--border-color); margin: 1.3em 0; }
+
+/* Models like to answer with tables; let wide ones scroll instead of overflowing */
+.markdown table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    margin: 0.9em 0;
+    font-size: 0.92em;
+}
+.markdown th, .markdown td {
+    border: 1px solid var(--border-color);
+    padding: 0.5em 0.75em;
+    text-align: left;
+    vertical-align: top;
+    /* keep whole words in cells (the table scrolls sideways instead of
+       splitting "Registration" into "Registratio / n") */
+    overflow-wrap: normal;
+    min-width: 6.5em;
+}
+.markdown th { background-color: var(--surface-2); font-weight: 600; }
+
+/* ---------- 8. Errors, actions, disclaimer ---------- */
 .error-message {
-    color: #ff6b6b;
-    padding: 1rem;
-    background-color: rgba(255, 107, 107, 0.1);
-    border-radius: 8px;
-    margin-bottom: 1rem;
+    color: var(--danger);
+    padding: 0.9rem 1.1rem;
+    background-color: var(--danger-bg);
+    border: 1px solid var(--danger-border);
+    border-radius: var(--radius-sm);
 }
 
 .error-message h3 {
-    margin-bottom: 0.5rem;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    margin: 0 0 0.25rem;
+    color: var(--danger);
+}
+
+.error-message p {
+    margin: 0;
+}
+
+/* Copy / Download buttons under a finished result (addResultActions in base.html) */
+.result-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.result-action {
+    background: var(--card-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    padding: 0.35rem 0.85rem;
+    font-size: 0.84rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.result-action:hover,
+.result-action:focus-visible {
+    background: var(--surface-2);
+    border-color: var(--primary-color);
+}
+
+.result-actions-status {
+    font-size: 0.82rem;
+    color: var(--primary-color);
+}
+
+.disclaimer {
+    text-align: center;
+    color: var(--text-faint);
+    font-size: 0.8rem;
+    line-height: 1.5;
+    max-width: 800px;
+    margin: 0.75rem auto 0;
+}
+
+.disclaimer strong {
+    color: var(--text-muted);
+}
+
+/* ---------- 9. Motion ---------- */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: none; }
+}
+
+.response-area,
+.result-actions {
+    animation: fadeIn 0.25s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .loading::before {
+        animation-iteration-count: infinite !important;
+        animation-duration: 3s !important;
+    }
 }

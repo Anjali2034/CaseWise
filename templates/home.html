@@ -2,101 +2,141 @@
 
 {% block title %}CaseWise - Legal Document Analysis Made Simple{% endblock %}
 
+{# Simple line icons (24x24, drawn with the current text colour) #}
+{% macro icon(name) -%}
+<svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+{%- if name == "chat" %}<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>
+{%- elif name == "draft" %}<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9 14h6"/>
+{%- elif name == "analyze" %}<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h4"/><path d="M14 3v5h5v2"/><circle cx="16.5" cy="16.5" r="3"/><path d="M21 21l-2.3-2.3"/>
+{%- elif name == "shield" %}<path d="M12 3l7 3v6c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6z"/><path d="M9 12l2 2 4-4"/>
+{%- elif name == "book" %}<path d="M3 6.5C5 5 9 5 12 7c3-2 7-2 9-.5V19c-2-1.5-6-1.5-9 .5-3-2-7-2-9-.5z"/><path d="M12 7v12.5"/>
+{%- elif name == "lock" %}<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>
+{%- elif name == "nostore" %}<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>
+{%- elif name == "scales" %}<path d="M12 4v15M8 19h8M5 7.5h14"/><path d="M5 7.5 3 12.5M5 7.5l2 5M2.5 12.5c.5 1.5 4.5 1.5 5 0z"/><path d="M19 7.5 17 12.5M19 7.5l2 5M16.5 12.5c.5 1.5 4.5 1.5 5 0z"/>
+{%- elif name == "check" %}<path d="M5 12.5l4.5 4.5L19 7.5"/>
+{%- elif name == "arrow" %}<path d="M5 12h14M13 6l6 6-6 6"/>
+{%- endif %}
+</svg>
+{%- endmacro %}
+
 {% block content %}
 <div class="homepage">
-    <!-- Hero Section -->
+    <!-- Hero -->
     <section class="hero">
         <div class="hero-content">
-            <h1>The AI Legal Assistant</h1>
-            <p class="hero-subtitle">Draft, analyze, check and simplify legal documents with AI, explained in plain language.</p>
+            <p class="hero-eyebrow">AI legal assistant, built for Indian law</p>
+            <h1>Legal documents, explained in plain language</h1>
+            <p class="hero-subtitle">Ask a legal question, draft an agreement, or check a contract for risks and missing clauses, in seconds.</p>
             <div class="cta-buttons">
-                <a href="/document-generator" class="primary-button">Get Started</a>
-                <a href="#features" class="secondary-button">Learn More</a>
+                <a href="/legal-assistant" class="primary-button">Ask a legal question</a>
+                <a href="/contract-analyzer" class="secondary-button">Analyze a contract</a>
             </div>
+            <ul class="hero-points">
+                <li>{{ icon("check") }} Free to use, no sign-up</li>
+                <li>{{ icon("check") }} Documents aren't stored</li>
+                <li>{{ icon("check") }} Not legal advice: a clear starting point</li>
+            </ul>
         </div>
     </section>
 
-    <!-- Features Section -->
-    <section id="features" class="features">
-        <div class="feature-grid">
-            <div class="feature-card">
-                <div class="feature-icon">💬</div>
+    <!-- Tools -->
+    <section id="features" class="features" aria-labelledby="tools-title">
+        <div class="section-header">
+            <h2 id="tools-title">Five tools for everyday legal work</h2>
+            <p>Each one explains its answer in plain language, under Indian law unless you say otherwise.</p>
+        </div>
+        <div class="feature-grid feature-grid-tools">
+            <a class="feature-card" href="/legal-assistant">
+                <span class="feature-icon">{{ icon("chat") }}</span>
                 <h3>Legal Assistant</h3>
-                <p>Ask general legal questions and get clear, plain-language explanations.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">📝</div>
+                <p>Ask general legal questions and get clear, plain-language explanations. Follow-up questions remember the conversation.</p>
+                <span class="feature-link">Ask a question {{ icon("arrow") }}</span>
+            </a>
+            <a class="feature-card" href="/document-generator">
+                <span class="feature-icon">{{ icon("draft") }}</span>
                 <h3>Document Generation</h3>
-                <p>Generate professional legal documents from simple prompts with AI assistance.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">📊</div>
+                <p>Describe what you need and get a structured first draft, with placeholders for the details you didn't give.</p>
+                <span class="feature-link">Draft a document {{ icon("arrow") }}</span>
+            </a>
+            <a class="feature-card" href="/contract-analyzer">
+                <span class="feature-icon">{{ icon("analyze") }}</span>
                 <h3>Contract Analysis</h3>
-                <p>Analyze contracts and identify key terms, risks, and obligations automatically.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">✅</div>
+                <p>Paste a contract or upload a PDF to see its key clauses, potential risks and a short summary.</p>
+                <span class="feature-link">Analyze a contract {{ icon("arrow") }}</span>
+            </a>
+            <a class="feature-card" href="/compliance-checker">
+                <span class="feature-icon">{{ icon("shield") }}</span>
                 <h3>Compliance Checking</h3>
-                <p>Ensure your documents comply with regulations and required standards.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🔍</div>
+                <p>Find commonly expected clauses that are missing and possible compliance issues, with recommendations.</p>
+                <span class="feature-link">Check compliance {{ icon("arrow") }}</span>
+            </a>
+            <a class="feature-card" href="/document-simplifier">
+                <span class="feature-icon">{{ icon("book") }}</span>
                 <h3>Document Simplification</h3>
-                <p>Convert complex legal text into clear, easy-to-understand language.</p>
-            </div>
+                <p>Turn dense legal wording into plain English, without leaving out obligations, deadlines or amounts.</p>
+                <span class="feature-link">Simplify a document {{ icon("arrow") }}</span>
+            </a>
         </div>
     </section>
 
-    <!-- How It Works Section -->
-    <section class="how-it-works">
-        <h2>How It Works</h2>
-        <div class="steps">
-            <div class="step">
-                <div class="step-number">1</div>
-                <h3>Upload or Input</h3>
-                <p>Upload your legal document or input your requirements</p>
-            </div>
-            <div class="step">
-                <div class="step-number">2</div>
-                <h3>AI Processing</h3>
-                <p>Our AI analyzes and processes your document</p>
-            </div>
-            <div class="step">
-                <div class="step-number">3</div>
-                <h3>Get Results</h3>
-                <p>Receive comprehensive analysis and insights</p>
-            </div>
+    <!-- How it works -->
+    <section class="how-it-works" aria-labelledby="how-title">
+        <div class="section-header">
+            <h2 id="how-title">How it works</h2>
         </div>
+        <ol class="steps">
+            <li class="step">
+                <span class="step-number">1</span>
+                <h3>Paste or upload</h3>
+                <p>Type your question, paste text, or upload a PDF.</p>
+            </li>
+            <li class="step">
+                <span class="step-number">2</span>
+                <h3>AI reads it for you</h3>
+                <p>The answer appears as it's written, usually within seconds.</p>
+            </li>
+            <li class="step">
+                <span class="step-number">3</span>
+                <h3>Copy, download, decide</h3>
+                <p>Keep the result, then have important documents reviewed by a lawyer.</p>
+            </li>
+        </ol>
     </section>
 
-    <!-- Privacy Section -->
-    <section class="privacy">
-        <h2>Built With Your Documents in Mind</h2>
-        <div class="feature-grid">
-            <div class="feature-card">
-                <div class="feature-icon">🖥️</div>
-                <h3>Use Your Own AI Model</h3>
-                <p>Runs on Ollama, which can run on your own computer, so your documents don't have to go to a third-party AI service.</p>
+    <!-- Privacy -->
+    <section class="privacy" aria-labelledby="privacy-title">
+        <div class="section-header">
+            <h2 id="privacy-title">Built with your documents in mind</h2>
+        </div>
+        <div class="feature-grid feature-grid-3">
+            <div class="feature-card static">
+                <span class="feature-icon">{{ icon("lock") }}</span>
+                <h3>Private AI processing</h3>
+                <p>The AI runs on Groq, which doesn't train on your documents and is set to keep none of them. You can also run CaseWise yourself with a model on your own computer.</p>
             </div>
-            <div class="feature-card">
-                <div class="feature-icon">🗑️</div>
+            <div class="feature-card static">
+                <span class="feature-icon">{{ icon("nostore") }}</span>
                 <h3>Nothing Stored on Our Servers</h3>
                 <p>There is no database. Documents are processed in memory and never written to logs. Your Legal Assistant chats are saved only in your own browser, and you can delete them anytime.</p>
             </div>
-            <div class="feature-card">
-                <div class="feature-icon">⚖️</div>
+            <div class="feature-card static">
+                <span class="feature-icon">{{ icon("scales") }}</span>
                 <h3>Not a Substitute for a Lawyer</h3>
                 <p>AI can make mistakes. Use the results as a starting point and have important documents reviewed by a qualified lawyer.</p>
             </div>
         </div>
     </section>
 
-    <!-- CTA Section -->
+    <!-- Call to action -->
     <section class="cta-section">
-        <h2>Ready to Transform Your Legal Document Workflow?</h2>
-        <p>Pick a tool and try it on your own document in seconds.</p>
-        <a href="/document-generator" class="primary-button">Get Started Now</a>
+        <h2>Try it on your own document</h2>
+        <p>No account needed. Pick a tool and get an answer in seconds.</p>
+        <a href="/contract-analyzer" class="primary-button">Analyze a contract</a>
     </section>
+
+    <footer class="site-footer">
+        <p><strong>CaseWise</strong> gives general legal information, not legal advice. For decisions with legal consequences, consult a qualified lawyer.</p>
+    </footer>
 </div>
 {% endblock %}
 
@@ -107,195 +147,336 @@
     color: var(--text-color);
 }
 
-/* Hero Section */
+.icon {
+    width: 1em;
+    height: 1em;
+    flex-shrink: 0;
+}
+
+/* Hero */
 .hero {
-    min-height: 80vh;
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 4rem 2rem;
-    background: linear-gradient(to bottom, var(--bg-color), var(--card-bg));
+    padding: 6.5rem 1.5rem 5rem;
+    background:
+        radial-gradient(900px 380px at 50% -40px, var(--primary-soft), transparent 70%),
+        var(--bg-color);
 }
 
 .hero-content {
-    max-width: 800px;
+    max-width: 780px;
+}
+
+.hero-eyebrow {
+    display: inline-block;
+    margin: 0 0 1.25rem;
+    padding: 0.3rem 0.85rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--brand-ink);
+    background: var(--primary-soft);
+    border: 1px solid rgba(15, 118, 110, 0.18);
+    border-radius: 999px;
 }
 
 .hero h1 {
-    font-size: 4rem;
+    font-size: 3.4rem;
+    line-height: 1.08;
     font-weight: 700;
-    margin-bottom: 1.5rem;
-    background: linear-gradient(45deg, var(--primary-color), #4CAF50);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.02em;
+    margin: 0 0 1.25rem;
 }
 
 .hero-subtitle {
-    font-size: 1.5rem;
-    color: rgba(255, 255, 255, 0.8);
-    margin-bottom: 2rem;
+    font-size: 1.25rem;
+    color: var(--text-muted);
     line-height: 1.6;
+    max-width: 620px;
+    margin: 0 auto 2rem;
 }
 
 .cta-buttons {
     display: flex;
-    gap: 1rem;
+    gap: 0.75rem;
     justify-content: center;
+    flex-wrap: wrap;
+}
+
+.primary-button,
+.secondary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.85rem 1.5rem;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .primary-button {
     background-color: var(--primary-color);
-    color: white;
-    padding: 1rem 2rem;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: 600;
-    transition: all 0.3s ease;
+    color: var(--on-primary);
+    box-shadow: 0 6px 16px rgba(15, 118, 110, 0.22);
 }
 
 .primary-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    background-color: var(--accent-color);
+    transform: translateY(-1px);
 }
 
 .secondary-button {
-    background-color: transparent;
+    background-color: var(--card-bg);
     color: var(--text-color);
-    padding: 1rem 2rem;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: 600;
-    border: 2px solid var(--primary-color);
-    transition: all 0.3s ease;
+    border: 1px solid var(--border-strong);
 }
 
 .secondary-button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
 }
 
-/* Features Section */
-.features {
-    padding: 6rem 2rem;
+.hero-points {
+    list-style: none;
+    padding: 0;
+    margin: 2rem 0 0;
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    color: var(--text-muted);
+    font-size: 0.92rem;
 }
 
+.hero-points li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.hero-points .icon {
+    color: var(--primary-color);
+    font-size: 1.1rem;
+}
+
+/* Sections */
+.features,
+.how-it-works,
+.privacy,
+.cta-section {
+    padding: 5rem 1.5rem;
+}
+
+.how-it-works,
+.cta-section {
+    background-color: var(--surface-2);
+}
+
+.section-header {
+    text-align: center;
+    max-width: 640px;
+    margin: 0 auto 2.75rem;
+}
+
+.section-header h2 {
+    font-size: 2.1rem;
+    line-height: 1.2;
+    margin: 0 0 0.6rem;
+}
+
+.section-header p {
+    color: var(--text-muted);
+    font-size: 1.05rem;
+    margin: 0;
+}
+
+/* Cards */
 .feature-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 2rem;
-    max-width: 1200px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.25rem;
+    max-width: 1100px;
     margin: 0 auto;
+}
+
+.feature-grid-3 {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+/* Five tool cards: rows of 3 + 2, centred (a plain grid left the fifth card alone) */
+.feature-grid-tools {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.feature-grid-tools > .feature-card {
+    flex: 0 1 330px;
 }
 
 .feature-card {
+    box-sizing: border-box;   /* padding counts inside the width, so 3 cards fit per row */
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
     background-color: var(--card-bg);
-    padding: 2rem;
-    border-radius: 12px;
-    text-align: center;
-    transition: transform 0.3s ease;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 1.6rem;
+    box-shadow: var(--shadow-sm);
+    color: var(--text-color);
+    text-decoration: none;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
-.feature-card:hover {
-    transform: translateY(-5px);
+a.feature-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+    border-color: rgba(15, 118, 110, 0.35);
 }
 
 .feature-icon {
-    font-size: 2.5rem;
-    margin-bottom: 1rem;
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background-color: var(--primary-soft);
+    color: var(--primary-color);
+    font-size: 1.4rem;
 }
 
 .feature-card h3 {
-    margin-bottom: 1rem;
-    color: var(--primary-color);
+    font-size: 1.2rem;
+    margin: 0.3rem 0 0;
 }
 
-/* How It Works Section */
-.how-it-works {
-    padding: 6rem 2rem;
-    text-align: center;
-    background-color: var(--card-bg);
-}
-
-.how-it-works h2 {
-    margin-bottom: 3rem;
-}
-
-.steps {
-    display: flex;
-    justify-content: center;
-    gap: 3rem;
-    flex-wrap: wrap;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-.step {
+.feature-card p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin: 0;
     flex: 1;
-    min-width: 250px;
-    max-width: 300px;
+}
+
+.feature-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.4rem;
+    color: var(--primary-color);
+    font-weight: 600;
+    font-size: 0.92rem;
+}
+
+a.feature-card:hover .feature-link .icon {
+    transform: translateX(3px);
+}
+
+.feature-link .icon {
+    transition: transform 0.18s ease;
+}
+
+/* How it works */
+.steps {
+    list-style: none;
+    padding: 0;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 2rem;
+    max-width: 960px;
+    text-align: center;
 }
 
 .step-number {
+    display: grid;
+    place-items: center;
     width: 40px;
     height: 40px;
-    background-color: var(--primary-color);
-    color: white;
+    margin: 0 auto 0.9rem;
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 1rem;
-    font-weight: bold;
+    background-color: var(--primary-color);
+    color: var(--on-primary);
+    font-weight: 700;
 }
 
-/* Privacy Section */
-.privacy {
-    padding: 6rem 2rem;
-    text-align: center;
+.step h3 {
+    font-size: 1.15rem;
+    margin: 0 0 0.35rem;
 }
 
-.privacy h2 {
-    margin-bottom: 3rem;
+.step p {
+    color: var(--text-muted);
+    margin: 0;
 }
 
-/* CTA Section */
+/* Call to action */
 .cta-section {
-    padding: 6rem 2rem;
     text-align: center;
-    background-color: var(--card-bg);
 }
 
 .cta-section h2 {
-    margin-bottom: 1rem;
+    font-size: 2rem;
+    margin: 0 0 0.6rem;
 }
 
 .cta-section p {
-    color: rgba(255, 255, 255, 0.8);
-    margin-bottom: 2rem;
+    color: var(--text-muted);
+    margin: 0 0 1.75rem;
 }
 
-/* Responsive Design */
+/* Footer */
+.site-footer {
+    border-top: 1px solid var(--border-color);
+    padding: 2rem 1.5rem 2.5rem;
+    text-align: center;
+    color: var(--text-faint);
+    font-size: 0.85rem;
+}
+
+.site-footer p {
+    max-width: 640px;
+    margin: 0 auto;
+}
+
 @media (max-width: 768px) {
+    .hero {
+        padding: 4rem 1.25rem 3.5rem;
+    }
+
     .hero h1 {
-        font-size: 2.5rem;
+        font-size: 2.3rem;
     }
 
     .hero-subtitle {
-        font-size: 1.2rem;
+        font-size: 1.08rem;
     }
 
     .cta-buttons {
         flex-direction: column;
+        align-items: stretch;
     }
 
-    .steps {
+    .hero-points {
         flex-direction: column;
         align-items: center;
+        gap: 0.5rem;
     }
 
-    .step {
-        margin-bottom: 2rem;
+    .features,
+    .how-it-works,
+    .privacy,
+    .cta-section {
+        padding: 3.5rem 1.25rem;
+    }
+
+    .section-header h2 {
+        font-size: 1.7rem;
     }
 }
 </style>
-{% endblock %} 
+{% endblock %}

@@ -5,7 +5,7 @@
 
 {% block content %}
 <section class="chat-container">
-    <aside class="chat-sidebar" aria-label="Your chats">
+    <aside class="chat-sidebar" id="chatSidebar" aria-label="Your chats">
         <div class="new-chat">
             <button id="newChatBtn" class="new-chat-btn" type="button">
                 <span class="plus-icon" aria-hidden="true">+</span> New Chat
@@ -21,7 +21,13 @@
         </div>
     </aside>
 
+    <div class="chat-sidebar-backdrop" id="chatSidebarBackdrop" hidden></div>
+
     <div class="chat-main">
+        <button type="button" class="chats-toggle" id="chatsToggle" aria-controls="chatSidebar" aria-expanded="false">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+            Your chats
+        </button>
         <div class="chat-messages" id="chatMessages">
             <div class="welcome-message">
                 <h1>Legal Assistant</h1>
@@ -35,7 +41,7 @@
                     <textarea
                         id="question"
                         name="question"
-                        placeholder="Type your legal question here... (Enter to send, Shift+Enter for a new line)"
+                        placeholder="Ask a legal question..."
                         aria-label="Your legal question"
                         rows="1"
                         autofocus></textarea>
@@ -45,6 +51,7 @@
                         </svg>
                     </button>
                 </div>
+                <p class="input-hint" aria-hidden="true">Enter to send · Shift+Enter for a new line</p>
             </form>
             {{ disclaimer("Answers are general information and may not apply to your situation or jurisdiction.") }}
         </div>
@@ -55,32 +62,32 @@
 {% block extra_css %}
 <style>
 .chat-sidebar {
-    width: 260px;
-    background-color: var(--card-bg);
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    width: 270px;
+    flex-shrink: 0;
+    background-color: var(--surface-2);
+    border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
 }
 
 .new-chat {
     padding: 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .new-chat-btn {
     width: 100%;
-    padding: 0.75rem;
+    padding: 0.7rem;
     background-color: var(--primary-color);
-    color: white;
+    color: var(--on-primary);
     border: none;
-    border-radius: 6px;
+    border-radius: 10px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
+    font-weight: 600;
+    transition: background-color 0.15s ease;
 }
 
 .new-chat-btn:hover {
@@ -89,18 +96,19 @@
 
 .plus-icon {
     font-size: 1.2rem;
+    line-height: 1;
 }
 
 .chat-history {
     flex: 1;
     overflow-y: auto;
-    padding: 0.75rem;
+    padding: 0 0.6rem 0.75rem;
 }
 
 .chat-history-empty {
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--text-faint);
     font-size: 0.85rem;
-    margin: 0.25rem;
+    margin: 0.25rem 0.5rem;
 }
 
 .chat-history-list {
@@ -112,12 +120,16 @@
 .chat-history-item {
     display: flex;
     align-items: center;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
 }
 
-.chat-history-item:hover,
+.chat-history-item:hover {
+    background-color: var(--surface-hover);
+}
+
 .chat-history-item.active {
-    background-color: rgba(255, 255, 255, 0.07);
+    background-color: var(--card-bg);
+    box-shadow: var(--shadow-sm);
 }
 
 .chat-history-open {
@@ -127,7 +139,7 @@
     border: none;
     color: var(--text-color);
     text-align: left;
-    padding: 0.55rem 0.6rem;
+    padding: 0.55rem 0.65rem;
     font-size: 0.88rem;
     cursor: pointer;
     overflow: hidden;
@@ -138,57 +150,77 @@
 .chat-history-delete {
     background: none;
     border: none;
-    color: rgba(255, 255, 255, 0.45);
+    color: var(--text-faint);
     padding: 0.4rem 0.6rem;
     font-size: 1.05rem;
     line-height: 1;
     cursor: pointer;
-    border-radius: 4px;
+    border-radius: 6px;
 }
 
 .chat-history-delete:hover,
 .chat-history-delete:focus-visible {
-    color: #ff6b6b;
+    color: var(--danger);
 }
 
 .chat-history-footer {
-    padding: 0.75rem 1rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.85rem 1rem;
+    border-top: 1px solid var(--border-color);
     font-size: 0.78rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--text-faint);
 }
 
 .chat-history-footer p {
-    margin: 0 0 0.4rem;
+    margin: 0 0 0.35rem;
 }
 
 .chat-history-clear {
     background: none;
     border: none;
     padding: 0;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--text-muted);
     text-decoration: underline;
     font-size: 0.78rem;
     cursor: pointer;
 }
 
+.chat-history-clear:hover {
+    color: var(--danger);
+}
+
+/* Phones: the sidebar becomes a panel that slides in from the left */
+.chats-toggle {
+    display: none;
+}
+
+/* Keyboard hint under the input: desktop only (phone keyboards have their own send key) */
+.input-hint {
+    margin: 0.4rem 0 0;
+    text-align: right;
+    font-size: 0.75rem;
+    color: var(--text-faint);
+}
+
 .message {
     display: flex;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-    animation: fadeIn 0.3s ease-out;
+    max-width: 860px;
+    margin: 0 auto 1rem;
+    padding: 1.25rem 1.5rem;
+    border-radius: var(--radius);
+    animation: fadeIn 0.25s ease-out;
 }
 
 .message.user {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: var(--primary-soft);
 }
 
 .message.assistant {
-    background-color: rgba(255, 255, 255, 0.02);
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
 }
 
 .message-content {
-    max-width: 800px;
     margin: 0 auto;
     width: 100%;
 }
@@ -200,11 +232,57 @@
 
 @media (max-width: 768px) {
     .chat-sidebar {
-        display: none;
+        position: fixed;
+        top: var(--navbar-height);
+        bottom: 0;
+        left: 0;
+        width: min(85vw, 300px);
+        z-index: 900;
+        transform: translateX(-100%);
+        visibility: hidden;
+        transition: transform 0.2s ease, visibility 0.2s;
+        box-shadow: var(--shadow-md);
+    }
+
+    .chat-sidebar.open {
+        transform: none;
+        visibility: visible;
+    }
+
+    .chat-sidebar-backdrop {
+        position: fixed;
+        inset: var(--navbar-height) 0 0 0;
+        background: rgba(27, 34, 48, 0.35);
+        z-index: 899;
+    }
+
+    .chats-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        align-self: flex-start;
+        margin: 0.75rem 1rem 0.25rem;
+        padding: 0.4rem 0.8rem;
+        background: var(--card-bg);
+        color: var(--text-color);
+        border: 1px solid var(--border-strong);
+        border-radius: 999px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+    }
+
+    .chats-toggle svg {
+        width: 16px;
+        height: 16px;
     }
 
     .message {
         padding: 1rem;
+    }
+
+    .input-hint {
+        display: none;
     }
 }
 </style>
@@ -326,7 +404,26 @@ document.addEventListener('DOMContentLoaded', function() {
         renderHistory();
     }
 
-    newChatBtn.addEventListener('click', startNewChat);
+    // Phones: the chats panel slides in; close it after choosing, or with Escape / a tap outside
+    const sidebar = document.getElementById('chatSidebar');
+    const sidebarToggle = document.getElementById('chatsToggle');
+    const sidebarBackdrop = document.getElementById('chatSidebarBackdrop');
+    function setSidebarOpen(open) {
+        sidebar.classList.toggle('open', open);
+        sidebarBackdrop.hidden = !open;
+        sidebarToggle.setAttribute('aria-expanded', String(open));
+    }
+    sidebarToggle.addEventListener('click', () => setSidebarOpen(!sidebar.classList.contains('open')));
+    sidebarBackdrop.addEventListener('click', () => setSidebarOpen(false));
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+            setSidebarOpen(false);
+            sidebarToggle.focus();
+        }
+    });
+    historyList.addEventListener('click', (e) => { if (e.target.closest('.chat-history-open')) setSidebarOpen(false); });
+
+    newChatBtn.addEventListener('click', () => { startNewChat(); setSidebarOpen(false); });
     clearChatsBtn.addEventListener('click', () => {
         if (!confirm('Delete all saved chats from this browser?')) return;
         chats = [];

@@ -144,7 +144,8 @@ templates/              HTML pages (Jinja2)
 static/vendor/          marked (Markdown) and DOMPurify (sanitising), kept in the repo with their licences
   base.html             Shared layout, navbar and JavaScript helpers
   partials/             Reusable pieces: "not legal advice" notice, PDF upload box
-static/css/styles.css   All shared styles
+static/css/styles.css   All shared styles ("Ivory & Ink" design: colours and fonts are variables at the top)
+static/fonts/           Inter and Source Serif 4, self-hosted, with their licences (SIL Open Font License)
 tests/                  pytest test suite
 notebooks/              Early experiments (not used by the app)
 requirements.in         Packages CaseWise uses directly (edit this one)

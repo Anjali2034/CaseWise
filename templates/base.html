@@ -4,22 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}CaseWise{% endblock %}</title>
+    <meta name="theme-color" content="#faf8f4">
+    <meta name="color-scheme" content="light">
+    <link rel="icon" href="{{ url_for('static', path='favicon.svg') }}" type="image/svg+xml">
+    <link rel="icon" href="{{ url_for('static', path='favicon-32.png') }}" sizes="32x32" type="image/png">
+    <link rel="apple-touch-icon" href="{{ url_for('static', path='apple-touch-icon.png') }}">
+    <!-- Fonts are self-hosted (static/fonts): no requests to third parties, and they load fast -->
+    <link rel="preload" href="{{ url_for('static', path='fonts/inter-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{{ url_for('static', path='fonts/source-serif-4-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="{{ url_for('static', path='fonts/fonts.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar">
+    {# The five tools, listed once for both the desktop navbar and the phone menu #}
+    {% set tools = [
+        ("/legal-assistant", "Legal Assistant"),
+        ("/document-generator", "Document Generator"),
+        ("/contract-analyzer", "Contract Analyzer"),
+        ("/compliance-checker", "Compliance Checker"),
+        ("/document-simplifier", "Document Simplifier"),
+    ] %}
+    {% set current_path = request.url.path %}
+    <nav class="navbar" aria-label="Main">
         <div class="navbar-container">
             <div class="navbar-left">
-                <a href="/" class="navbar-logo">
+                <a href="/" class="navbar-logo" aria-label="CaseWise home">
+                    <svg class="logo-mark" aria-hidden="true" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="32" height="32" rx="8" fill="#0f766e"/>
+                        <g fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 7.5v16M11 23.5h10M7.5 11h17"/>
+                            <path d="M7.5 11 5 17.5M7.5 11l2.5 6.5M4.5 17.5c.6 1.8 5.4 1.8 6 0z"/>
+                            <path d="M24.5 11 22 17.5M24.5 11l2.5 6.5M21.5 17.5c.6 1.8 5.4 1.8 6 0z"/>
+                        </g>
+                    </svg>
                     <span class="logo-text">CaseWise</span>
                 </a>
                 <div class="navbar-links">
-                    <a href="/legal-assistant" class="nav-link">Legal Assistant</a>
-                    <a href="/document-generator" class="nav-link">Document Generator</a>
-                    <a href="/contract-analyzer" class="nav-link">Contract Analyzer</a>
-                    <a href="/compliance-checker" class="nav-link">Compliance Checker</a>
-                    <a href="/document-simplifier" class="nav-link">Document Simplifier</a>
+                    {% for href, label in tools %}
+                    <a href="{{ href }}" class="nav-link"{% if current_path == href %} aria-current="page"{% endif %}>{{ label }}</a>
+                    {% endfor %}
                 </div>
             </div>
             <button class="mobile-menu-button" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu">
@@ -31,11 +55,9 @@
     </nav>
 
     <div class="mobile-menu" id="mobile-menu">
-        <a href="/legal-assistant" class="mobile-nav-link">Legal Assistant</a>
-        <a href="/document-generator" class="mobile-nav-link">Document Generator</a>
-        <a href="/contract-analyzer" class="mobile-nav-link">Contract Analyzer</a>
-        <a href="/compliance-checker" class="mobile-nav-link">Compliance Checker</a>
-        <a href="/document-simplifier" class="mobile-nav-link">Document Simplifier</a>
+        {% for href, label in tools %}
+        <a href="{{ href }}" class="mobile-nav-link"{% if current_path == href %} aria-current="page"{% endif %}>{{ label }}</a>
+        {% endfor %}
     </div>
 
     <main>
