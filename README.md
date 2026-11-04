@@ -157,10 +157,9 @@ static/vendor/          marked (Markdown) and DOMPurify (sanitising), kept in th
 static/css/styles.css   All shared styles ("Ivory & Ink" design: colours and fonts are variables at the top)
 static/fonts/           Inter and Source Serif 4, self-hosted, with their licences (SIL Open Font License)
 tests/                  pytest test suite
-notebooks/              Early experiments (not used by the app)
 requirements.in         Packages CaseWise uses directly (edit this one)
 requirements.txt        Lock file generated from requirements.in (every package pinned, with hashes)
-render.yaml, Procfile   Deployment configuration
+render.yaml             Deployment configuration
 ```
 
 ## Running the tests
