@@ -3,6 +3,7 @@
 {% from "partials/upload.html" import upload_box %}
 
 {% block title %}Document Simplifier - CaseWise{% endblock %}
+{% block description %}Turn dense legal wording into plain English, without leaving out obligations, deadlines or amounts.{% endblock %}
 
 {% block content %}
 <section class="chat-container tool-page">
@@ -41,7 +42,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce="{{ request.state.csp_nonce }}">
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('simplifierForm');
     const documentInput = document.getElementById('document');

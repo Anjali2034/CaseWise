@@ -3,6 +3,7 @@
 {% from "partials/upload.html" import upload_box %}
 
 {% block title %}Contract Analyzer - CaseWise{% endblock %}
+{% block description %}Paste a contract or upload a PDF to see its key clauses, potential risks and a short summary, in plain language.{% endblock %}
 
 {% block content %}
 <section class="chat-container tool-page">
@@ -40,7 +41,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce="{{ request.state.csp_nonce }}">
 document.addEventListener('DOMContentLoaded', function() {
 
     const form = document.getElementById('contractForm');

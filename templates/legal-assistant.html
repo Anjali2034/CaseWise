@@ -2,6 +2,7 @@
 {% from "partials/disclaimer.html" import disclaimer %}
 
 {% block title %}Legal Assistant - CaseWise{% endblock %}
+{% block description %}Ask legal questions and get clear, plain-language explanations under Indian law, with follow-up questions. General information, not legal advice.{% endblock %}
 
 {% block content %}
 <section class="chat-container">
@@ -60,7 +61,7 @@
 {% endblock %}
 
 {% block extra_css %}
-<style>
+<style nonce="{{ request.state.csp_nonce }}">
 .chat-sidebar {
     width: 270px;
     flex-shrink: 0;
@@ -289,7 +290,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce="{{ request.state.csp_nonce }}">
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('legalQuestionForm');
     const textarea = document.getElementById('question');

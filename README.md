@@ -19,6 +19,7 @@ CaseWise is an AI legal document assistant. It helps you understand, draft and r
 - **Your choice of AI:** locally, CaseWise talks to [Ollama](https://ollama.com) on your own computer, so documents never leave it. The live site uses [Groq](https://groq.com), whose [terms](https://console.groq.com/docs/legal/services-agreement) say it doesn't train on API inputs or outputs and [doesn't keep them by default](https://console.groq.com/docs/your-data).
 - **Nothing stored on the server:** there is no database. Uploaded documents are processed in memory. Legal Assistant chats are saved only in the user's own browser (`localStorage`), where they can be deleted.
 - **Nothing sensitive in the logs:** server logs record sizes ("212 chars"), never the text of questions, documents or file names.
+- **Policies:** the site's [Privacy Policy](templates/privacy.html) and [Terms of Use](templates/terms.html) are at `/privacy` and `/terms`. If you change how data is handled, update them too.
 
 ## Requirements
 
@@ -95,6 +96,8 @@ Settings are read from environment variables, or from a `.env` file in the proje
 | `MAX_TEXT_CHARS` | `20000` with Groq, `50000` with Ollama | Maximum characters per request (pasted text, or text extracted from a PDF). Groq's free plan allows 8,000 tokens per minute, and a request has to fit in that |
 | `MAX_PDF_MB` | `10` | Maximum PDF upload size in megabytes |
 | `ALLOWED_ORIGINS` | *(empty)* | Other websites allowed to call the API from a browser (CORS), comma-separated. Leave empty unless you host a separate frontend |
+| `CONTACT_EMAIL` | *(empty)* | Published on the Privacy and Terms pages for questions and complaints. Set it before going live: while it's empty, those pages say contact details are coming and the server logs a warning |
+| `SITE_URL` | `RENDER_EXTERNAL_URL` | The site's public address, for link previews. Not needed on Render; set it when you use a custom domain |
 | `PORT` | `8000` | Port used by `python main.py` |
 
 ## Running the tests
@@ -104,7 +107,7 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-The tests don't need Ollama: they replace the model with a fake one. They cover every page and API endpoint, error handling, retries, input limits, privacy (no document text in logs), XSS escaping, accessibility checks and branding.
+The tests don't need Ollama: they replace the model with a fake one. They cover every page and API endpoint, error handling, retries, input limits, privacy (no document text in logs), XSS escaping, security headers, link previews, accessibility checks and branding.
 
 ## API
 
@@ -133,17 +136,20 @@ Errors return `{"detail": "a readable message"}` with a meaningful status code:
 | `504` | The AI took too long to answer |
 | `500` | Unexpected error. The message includes an error ID that also appears in the server log |
 
+A browser opening a wrong address sees a designed "page not found" page instead of this JSON.
+
 ## Project structure
 
 ```
 main.py                 Web app: pages, API endpoints, input limits, error handling
 llm_client.py           Talks to the AI (Ollama or Groq): streaming, retries, parsing the model's answers
 rate_limit.py           Per-visitor limits on the AI tools
+security.py             Security headers on every response, including the Content Security Policy
 prompts.py              The instructions sent to the AI for each tool, with shared safety rules
-templates/              HTML pages (Jinja2)
+templates/              HTML pages (Jinja2), including Privacy, Terms and the error page
+  base.html             Shared layout, navbar, link previews and JavaScript helpers
+  partials/             Reusable pieces: "not legal advice" notice, PDF upload box, footer, contact line
 static/vendor/          marked (Markdown) and DOMPurify (sanitising), kept in the repo with their licences
-  base.html             Shared layout, navbar and JavaScript helpers
-  partials/             Reusable pieces: "not legal advice" notice, PDF upload box
 static/css/styles.css   All shared styles ("Ivory & Ink" design: colours and fonts are variables at the top)
 static/fonts/           Inter and Source Serif 4, self-hosted, with their licences (SIL Open Font License)
 tests/                  pytest test suite
@@ -170,7 +176,7 @@ The live site runs on [Render](https://render.com)'s free plan, using Groq for t
 
 1. **Get a Groq API key** at [console.groq.com/keys](https://console.groq.com/keys).
 2. **Turn on Zero Data Retention** in Groq's [Data Controls settings](https://console.groq.com/settings/data-controls), so Groq doesn't keep request logs even for troubleshooting.
-3. In Render, choose **New → Blueprint** and connect this GitHub repository. Render reads `render.yaml` and asks for `GROQ_API_KEY`: paste the key there. It's stored as a secret, never in the code.
+3. In Render, choose **New → Blueprint** and connect this GitHub repository. Render reads `render.yaml` and asks for `GROQ_API_KEY` and `CONTACT_EMAIL`. Paste the key and the email address to publish. The key is stored as a secret, never in the code.
 4. When the deploy finishes, open `https://<your-service>.onrender.com/health` and check for `"status": "ok"`.
 
 Groq's free plan allows **1,000 requests a day and 8,000 tokens a minute**, shared by all visitors. A typical request uses about 400-900 tokens. When the quota runs out, users see "CaseWise is very busy right now" and can retry a minute later.

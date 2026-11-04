@@ -2,6 +2,7 @@
 {% from "partials/disclaimer.html" import disclaimer %}
 
 {% block title %}Document Generator - CaseWise{% endblock %}
+{% block description %}Describe what you need and get a structured first draft of a legal document, with placeholders for missing details. Have it reviewed by a lawyer.{% endblock %}
 
 {% block content %}
 <section class="chat-container tool-page">
@@ -37,7 +38,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce="{{ request.state.csp_nonce }}">
 document.addEventListener('DOMContentLoaded', function() {
 
     const form = document.getElementById('documentForm');

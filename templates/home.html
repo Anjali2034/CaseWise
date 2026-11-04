@@ -134,14 +134,12 @@
         <a href="/contract-analyzer" class="primary-button">Analyze a contract</a>
     </section>
 
-    <footer class="site-footer">
-        <p><strong>CaseWise</strong> gives general legal information, not legal advice. For decisions with legal consequences, consult a qualified lawyer.</p>
-    </footer>
+    {% include "partials/footer.html" %}
 </div>
 {% endblock %}
 
 {% block extra_css %}
-<style>
+<style nonce="{{ request.state.csp_nonce }}">
 .homepage {
     background-color: var(--bg-color);
     color: var(--text-color);
@@ -427,20 +425,6 @@ a.feature-card:hover .feature-link .icon {
 .cta-section p {
     color: var(--text-muted);
     margin: 0 0 1.75rem;
-}
-
-/* Footer */
-.site-footer {
-    border-top: 1px solid var(--border-color);
-    padding: 2rem 1.5rem 2.5rem;
-    text-align: center;
-    color: var(--text-faint);
-    font-size: 0.85rem;
-}
-
-.site-footer p {
-    max-width: 640px;
-    margin: 0 auto;
 }
 
 @media (max-width: 768px) {

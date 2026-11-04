@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}{{ heading }} - CaseWise{% endblock %}
+{% block description %}{{ heading }}.{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+
+{% block content %}
+<div class="error-page">
+    <p class="error-code">{{ code }}</p>
+    <h1>{{ heading }}</h1>
+    <p>{{ message }}</p>
+    <a href="/" class="error-home-link">Go to the home page</a>
+</div>
+{% include "partials/footer.html" %}
+{% endblock %}

@@ -32,7 +32,7 @@ def test_user_content_and_filenames_never_logged(client, llm_reply, caplog):
 
 @pytest.mark.parametrize("template", TEMPLATES, ids=lambda p: p.name)
 def test_template_javascript_parses(template):
-    for script in re.findall(r"<script>(.*?)</script>", template.read_text(encoding="utf-8"), re.S):
+    for script in re.findall(r"<script[^>]*>(.*?)</script>", template.read_text(encoding="utf-8"), re.S):
         esprima.parseScript(script)
 
 

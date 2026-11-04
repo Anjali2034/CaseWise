@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% from "partials/contact.html" import contact_line %}
+
+{% block title %}Privacy Policy - CaseWise{% endblock %}
+{% block description %}What happens to the text and documents you submit to CaseWise: nothing is stored on our servers, and our AI provider doesn't train on them.{% endblock %}
+
+{% block content %}
+<article class="legal-page">
+    <h1>Privacy Policy</h1>
+    <p class="legal-updated">Last updated: 4 November 2026</p>
+
+    <p class="legal-summary"><strong>In short:</strong> CaseWise has no accounts and no database. Your text is sent to our AI provider to create your answer, and neither we nor the provider keep it. Chats are saved only in your own browser.</p>
+
+    <h2>What happens to your text and documents</h2>
+    <ul>
+        <li>The text you type or paste, and the text read from PDFs you upload, is processed in memory to create your answer.</li>
+        <li>We don't save it in a database or to files, and we don't write it to our application logs. Those logs record only technical details, such as how long a request was.</li>
+        <li>To create your answer, your text is sent to our AI provider, <strong>Groq</strong>.</li>
+    </ul>
+
+    <h2>Our AI provider</h2>
+    <ul>
+        <li>Groq's <a href="https://console.groq.com/docs/legal/services-agreement" target="_blank" rel="noopener noreferrer">terms</a> say it doesn't use your inputs or outputs to train AI models.</li>
+        <li>We have turned on Groq's <a href="https://console.groq.com/docs/your-data" target="_blank" rel="noopener noreferrer">Zero Data Retention</a> setting, so your text isn't kept in its logs. Groq still records usage information that doesn't include your text.</li>
+        <li>Groq's servers may be outside India, so your text may be processed outside India.</li>
+    </ul>
+
+    <h2>Other information we handle</h2>
+    <ul>
+        <li><strong>IP address, for fair-use limits.</strong> To limit how many AI requests each visitor can make, we hold your IP address in temporary memory for up to 24 hours. It isn't saved anywhere else by this feature.</li>
+        <li><strong>Hosting logs.</strong> Our hosting provider, <strong>Render</strong>, keeps routine technical logs of requests, such as IP address, time and the page requested. They don't include the text you submit.</li>
+    </ul>
+
+    <h2>What stays in your browser</h2>
+    <p>Your Legal Assistant chats are saved only on your device, in your browser's local storage. You can delete one chat or all of them from the chat page. Clearing your browser data also removes them. Anyone using the same browser profile can see them, so delete them on a shared device.</p>
+
+    <h2>What we don't do</h2>
+    <p>We don't use cookies, advertising or analytics, we don't ask you to create an account, and we don't sell your information.</p>
+
+    <h2>Please be careful with sensitive details</h2>
+    <p>Only submit what you need to. Where you can, remove details such as Aadhaar, PAN or bank numbers before submitting a document. Only submit other people's personal information if you have the right to.</p>
+
+    <h2>Your choices and questions</h2>
+    <p>Because we don't store your text, we can't look it up, correct it or delete it for you afterwards. If you have a question or a complaint about how your information is handled, including a request or grievance under India's Digital Personal Data Protection Act, 2023, contact us: {{ contact_line(contact_email) }}</p>
+
+    <h2>Children</h2>
+    <p>CaseWise is intended for people aged 18 or over.</p>
+
+    <h2>Changes to this policy</h2>
+    <p>If our practices change, we'll update this page and the date at the top.</p>
+</article>
+{% include "partials/footer.html" %}
+{% endblock %}

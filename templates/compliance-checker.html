@@ -3,6 +3,7 @@
 {% from "partials/upload.html" import upload_box %}
 
 {% block title %}Compliance Checker - CaseWise{% endblock %}
+{% block description %}Check legal text for commonly expected clauses that are missing and possible compliance issues under Indian law, with recommendations.{% endblock %}
 
 {% block content %}
 <section class="chat-container tool-page">
@@ -41,7 +42,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+<script nonce="{{ request.state.csp_nonce }}">
 document.addEventListener('DOMContentLoaded', function() {
 
     const form = document.getElementById('complianceForm');

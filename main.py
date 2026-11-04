@@ -3,7 +3,9 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exception_handlers import http_exception_handler
 from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field, StringConstraints
 from typing import Annotated, List, Literal
@@ -19,6 +21,7 @@ from llm_client import (
     ServiceUnavailableError,
 )
 from rate_limit import RateLimiter, client_key
+from security import SecurityHeadersMiddleware, request_is_https, security_headers
 from dotenv import load_dotenv
 import traceback
 import logging
@@ -55,6 +58,9 @@ GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 AI_REQUESTS_PER_MINUTE = int(os.getenv("AI_REQUESTS_PER_MINUTE", "5"))
 AI_REQUESTS_PER_DAY = int(os.getenv("AI_REQUESTS_PER_DAY", "50"))
 TRUST_PROXY_HEADERS = env_flag("TRUST_PROXY_HEADERS")
+CONTACT_EMAIL = os.getenv("CONTACT_EMAIL", "").strip()
+# The public address, for link previews. Render sets RENDER_EXTERNAL_URL automatically.
+SITE_URL = (os.getenv("SITE_URL") or os.getenv("RENDER_EXTERNAL_URL") or "").strip().rstrip("/")
 
 app = FastAPI(title="CaseWise")
 
@@ -63,6 +69,11 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Set up templates
 templates = Jinja2Templates(directory="templates")
+templates.env.globals.update(contact_email=CONTACT_EMAIL, site_url=SITE_URL)
+if not CONTACT_EMAIL:
+    logger.warning("CONTACT_EMAIL is not set: the Privacy and Terms pages have no contact address.")
+
+app.add_middleware(SecurityHeadersMiddleware)
 
 def cors_settings(origins: list) -> dict:
     """CORS options for the given allowed origins.
@@ -265,6 +276,46 @@ def health():
     llm_status = llm.check_health()
     ok = llm_status["reachable"] and llm_status["model_available"]
     return {"status": "ok" if ok else "degraded", **llm_status}
+
+def wants_html(request: Request) -> bool:
+    return request.method == "GET" and "text/html" in request.headers.get("accept", "")
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_error_handler(request: Request, exc: StarletteHTTPException):
+    """A designed page when a person opens a wrong address; JSON for everything else."""
+    if exc.status_code in (404, 405) and wants_html(request):
+        return templates.TemplateResponse(request, "error.html", status_code=404, context={
+            "code": 404, "heading": "We couldn't find that page",
+            "message": "The address may be mistyped, or the page may have moved.",
+        })
+    return await http_exception_handler(request, exc)
+
+
+@app.exception_handler(Exception)
+async def server_error_handler(request: Request, exc: Exception):
+    """Last resort for anything unexpected: no internal details, an ID to find it in the logs."""
+    error_id = uuid.uuid4().hex[:8]
+    logger.error(f"Unhandled error [{error_id}]: {traceback.format_exc()}")
+    if wants_html(request):
+        response = templates.TemplateResponse(request, "error.html", status_code=500, context={
+            "code": 500, "heading": "Something went wrong on our side",
+            "message": f"Please try again in a moment. If it keeps happening, quote error ID {error_id}.",
+        })
+    else:
+        response = JSONResponse(status_code=500, content={"detail": f"Something went wrong (error ID: {error_id})."})
+    # This handler runs outside the middleware, so it adds the security headers itself
+    response.headers.update(security_headers(request.state.csp_nonce, request.url.path, request_is_https(request.scope)))
+    return response
+
+
+@app.get("/privacy", response_class=HTMLResponse)
+async def privacy_page(request: Request):
+    return templates.TemplateResponse(request, "privacy.html")
+
+@app.get("/terms", response_class=HTMLResponse)
+async def terms_page(request: Request):
+    return templates.TemplateResponse(request, "terms.html")
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):

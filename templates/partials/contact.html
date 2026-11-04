@@ -1,0 +1,4 @@
+{# The published contact address (CONTACT_EMAIL setting) #}
+{% macro contact_line(email) -%}
+{% if email %}<a href="mailto:{{ email }}">{{ email }}</a>.{% else %}contact details will be added here soon.{% endif %}
+{%- endmacro %}

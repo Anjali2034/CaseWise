@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% from "partials/contact.html" import contact_line %}
+
+{% block title %}Terms of Use - CaseWise{% endblock %}
+{% block description %}The terms for using CaseWise: it gives general legal information, not legal advice, and results should be reviewed by a qualified lawyer.{% endblock %}
+
+{% block content %}
+<article class="legal-page">
+    <h1>Terms of Use</h1>
+    <p class="legal-updated">Last updated: 4 November 2026</p>
+
+    <p class="legal-summary"><strong>In short:</strong> CaseWise is an AI tool that gives general legal information. It isn't a lawyer and can make mistakes, so have a qualified lawyer review anything important.</p>
+
+    <p>By using CaseWise, you agree to these terms. If you don't agree, please don't use it.</p>
+
+    <h2>Not legal advice</h2>
+    <p>CaseWise gives general information, created by AI. It is not legal advice, and using it doesn't create a lawyer-client relationship. Don't rely on it alone for decisions with legal consequences.</p>
+
+    <h2>AI can be wrong</h2>
+    <p>Answers, analyses and drafted documents may be incomplete, out of date or incorrect, and may not apply to your situation or state. They may miss risks, and may even cite laws incorrectly. Check them, and have important documents reviewed by a qualified lawyer before you use or sign them.</p>
+
+    <h2>Using CaseWise</h2>
+    <p>You must be 18 or over. You agree that you will:</p>
+    <ul>
+        <li>use CaseWise only for lawful purposes;</li>
+        <li>only submit content you have the right to use, including other people's personal information;</li>
+        <li>not try to disrupt the service, get around its usage limits, or use it to harm others.</li>
+    </ul>
+
+    <h2>Your content</h2>
+    <p>Your documents and questions stay yours. You give us permission to process them only as needed to create your answer, as described in our <a href="/privacy">Privacy Policy</a>. You're responsible for how you use the results.</p>
+
+    <h2>Availability and limits</h2>
+    <p>CaseWise is provided free of charge, as it is, without any guarantee that it will be accurate, uninterrupted or always available. To keep it fair for everyone, the number of requests and the length of documents are limited. We may change or stop the service at any time.</p>
+
+    <h2>Responsibility</h2>
+    <p>To the extent the law allows, CaseWise isn't responsible for any loss or damage that results from using the service or relying on its results.</p>
+
+    <h2>Governing law</h2>
+    <p>These terms are governed by the laws of India.</p>
+
+    <h2>Changes and contact</h2>
+    <p>If these terms change, we'll update this page and the date at the top. Questions: {{ contact_line(contact_email) }}</p>
+</article>
+{% include "partials/footer.html" %}
+{% endblock %}
